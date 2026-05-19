@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { HeroMatchupScore } from "@/lib/matchup-engine";
 import { HERO_ROLE_LABELS, HERO_ROLE_COLORS } from "@/data/heroes";
 import { ATTACK_TYPE_LABELS, ARMOR_TYPE_LABELS } from "@/data/damage-matrix";
+import { getHeroIcon } from "@/data/icons";
 import { cn } from "@/lib/utils";
 
 const RECOMMENDATION_STYLES: Record<HeroMatchupScore["recommendation"], { border: string; badge: string; label: string }> = {
@@ -26,11 +28,15 @@ export function HeroCard({ score, rank }: HeroCardProps) {
     <div className={cn("rounded-lg border bg-black/40 transition-all duration-200", style.border)}>
       <button onClick={() => setExpanded(!expanded)} className="w-full p-4 text-left">
         <div className="flex items-start gap-3">
-          {rank && (
-            <div className="flex-shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-amber-900/60 text-xs font-bold text-amber-400">
-              {rank}
-            </div>
-          )}
+          {/* Hero icon */}
+          <div className="relative flex-shrink-0 h-14 w-14 overflow-hidden rounded-lg border-2 border-amber-800/60 shadow-lg shadow-amber-950/50">
+            <Image src={getHeroIcon(hero.id)} alt={hero.name} fill className="object-cover" unoptimized />
+            {rank && (
+              <div className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-black shadow">
+                {rank}
+              </div>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-bold text-amber-200 text-lg">{hero.name}</span>

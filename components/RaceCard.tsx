@@ -1,20 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import { type Race, RACE_LABELS, RACE_DESCRIPTIONS } from "@/data/units";
+import { RACE_ICONS } from "@/data/icons";
 import { cn } from "@/lib/utils";
 
-const RACE_ICONS: Record<Race, string> = {
-  human:    "🛡️",
-  orc:      "⚔️",
-  nightelf: "🌙",
-  undead:   "💀",
-};
-
 const RACE_THEME: Record<Race, { border: string; glow: string; badge: string; bg: string }> = {
-  human:    { border: "border-blue-700",   glow: "hover:shadow-blue-900/60",   badge: "bg-blue-900/60 text-blue-300",   bg: "from-blue-950/60 to-slate-950/80" },
-  orc:      { border: "border-red-700",    glow: "hover:shadow-red-900/60",    badge: "bg-red-900/60 text-red-300",     bg: "from-red-950/60 to-slate-950/80" },
-  nightelf: { border: "border-purple-700", glow: "hover:shadow-purple-900/60", badge: "bg-purple-900/60 text-purple-300", bg: "from-purple-950/60 to-slate-950/80" },
-  undead:   { border: "border-slate-600",  glow: "hover:shadow-slate-700/60",  badge: "bg-slate-800/60 text-slate-300",  bg: "from-slate-900/60 to-slate-950/80" },
+  human:    { border: "border-blue-700",   glow: "hover:shadow-blue-900/60",    badge: "bg-blue-900/60 text-blue-300",    bg: "from-blue-950/60 to-slate-950/80" },
+  orc:      { border: "border-red-700",    glow: "hover:shadow-red-900/60",     badge: "bg-red-900/60 text-red-300",      bg: "from-red-950/60 to-slate-950/80" },
+  nightelf: { border: "border-purple-700", glow: "hover:shadow-purple-900/60",  badge: "bg-purple-900/60 text-purple-300", bg: "from-purple-950/60 to-slate-950/80" },
+  undead:   { border: "border-slate-600",  glow: "hover:shadow-slate-700/60",   badge: "bg-slate-800/60 text-slate-300",   bg: "from-slate-900/60 to-slate-950/80" },
 };
 
 interface RaceCardProps {
@@ -33,7 +28,7 @@ export function RaceCard({ race, selected, disabled, label, onClick }: RaceCardP
       onClick={() => !disabled && onClick(race)}
       disabled={disabled}
       className={cn(
-        "relative w-full rounded-lg border-2 bg-gradient-to-b p-5 text-left transition-all duration-200",
+        "relative w-full rounded-lg border-2 bg-gradient-to-b p-4 text-left transition-all duration-200",
         "hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
         theme.bg,
         theme.border,
@@ -47,8 +42,21 @@ export function RaceCard({ race, selected, disabled, label, onClick }: RaceCardP
           {label ?? "Selected"}
         </div>
       )}
-      <div className="mb-2 text-3xl">{RACE_ICONS[race]}</div>
-      <div className="mb-1 text-lg font-bold text-amber-200">{RACE_LABELS[race]}</div>
+
+      {/* Race icon */}
+      <div className="mb-3 flex items-center gap-3">
+        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border border-black/50 shadow-lg">
+          <Image
+            src={RACE_ICONS[race]}
+            alt={RACE_LABELS[race]}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+        <div className="font-bold text-amber-200 text-lg leading-tight">{RACE_LABELS[race]}</div>
+      </div>
+
       <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">{RACE_DESCRIPTIONS[race]}</p>
     </button>
   );

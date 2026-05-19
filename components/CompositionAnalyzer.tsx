@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import { UNITS_BY_RACE, RACE_LABELS, type Race, type Unit } from "@/data/units";
 import { HEROES_BY_RACE, type Hero } from "@/data/heroes";
 import { ATTACK_TYPE_LABELS, ARMOR_TYPE_LABELS } from "@/data/damage-matrix";
+import { getUnitIcon, getHeroIcon } from "@/data/icons";
 import { computeMatchup, type MatchupResult, type UnitMatchupScore, type HeroMatchupScore } from "@/lib/matchup-engine";
 import { DAMAGE_MATRIX, getEffectivenessLabel } from "@/data/damage-matrix";
 import { getBuildOrder } from "@/data/build-orders";
@@ -189,16 +191,18 @@ function scoreHeroVsComposition(
   return { hero, relevanceScore, strongPoints, weakPoints, recommendation };
 }
 
-// ---- Toggle button component ----
+// ---- Toggle button component with icon ----
 
 function ToggleChip({
   label,
   sub,
+  iconSrc,
   active,
   onClick,
 }: {
   label: string;
   sub: string;
+  iconSrc: string;
   active: boolean;
   onClick: () => void;
 }) {
@@ -206,14 +210,22 @@ function ToggleChip({
     <button
       onClick={onClick}
       className={cn(
-        "rounded-lg border px-3 py-2 text-left text-xs transition-all duration-150",
+        "flex items-center gap-2 rounded-lg border px-2 py-2 text-left text-xs transition-all duration-150",
         active
-          ? "border-amber-600 bg-amber-950/60 text-amber-300"
+          ? "border-amber-600 bg-amber-950/60 text-amber-300 shadow-md shadow-amber-950/40"
           : "border-slate-700 bg-black/30 text-slate-500 hover:border-slate-600 hover:text-slate-400"
       )}
     >
-      <div className="font-bold">{label}</div>
-      <div className="text-[10px] opacity-70 mt-0.5">{sub}</div>
+      <div className={cn(
+        "relative h-8 w-8 flex-shrink-0 overflow-hidden rounded border",
+        active ? "border-amber-700" : "border-slate-700"
+      )}>
+        <Image src={iconSrc} alt={label} fill className="object-cover" unoptimized />
+      </div>
+      <div className="min-w-0">
+        <div className="font-bold truncate">{label}</div>
+        <div className="text-[10px] opacity-70 truncate">{sub}</div>
+      </div>
     </button>
   );
 }
@@ -349,6 +361,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
                     key={hero.id}
                     label={hero.name}
                     sub={`${hero.primaryStat} • ${hero.range}`}
+                    iconSrc={getHeroIcon(hero.id)}
                     active={selectedHeroIds.has(hero.id)}
                     onClick={() => toggleHero(hero.id)}
                   />
@@ -384,6 +397,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
                       key={unit.id}
                       label={unit.name}
                       sub={`${ATTACK_TYPE_LABELS[unit.attackType]} / ${ARMOR_TYPE_LABELS[unit.armorType]}`}
+                      iconSrc={getUnitIcon(unit.id)}
                       active={selectedUnitIds.has(unit.id)}
                       onClick={() => toggleUnit(unit.id)}
                     />
@@ -423,14 +437,20 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
             {allEnemyHeroes
               .filter((h) => selectedHeroIds.has(h.id))
               .map((h) => (
-                <span key={h.id} className="rounded-full border border-amber-700 bg-amber-900/40 px-2 py-0.5 text-amber-300">
-                  👑 {h.name}
+                <span key={h.id} className="flex items-center gap-1.5 rounded-full border border-amber-700 bg-amber-900/40 pl-1 pr-2.5 py-0.5 text-amber-300">
+                  <span className="relative h-5 w-5 overflow-hidden rounded-full flex-shrink-0">
+                    <Image src={getHeroIcon(h.id)} alt={h.name} fill className="object-cover" unoptimized />
+                  </span>
+                  {h.name}
                 </span>
               ))}
             {allEnemyUnits
               .filter((u) => selectedUnitIds.has(u.id))
               .map((u) => (
-                <span key={u.id} className="rounded-full border border-slate-700 bg-slate-800/60 px-2 py-0.5 text-slate-300">
+                <span key={u.id} className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/60 pl-1 pr-2.5 py-0.5 text-slate-300">
+                  <span className="relative h-5 w-5 overflow-hidden rounded-full flex-shrink-0">
+                    <Image src={getUnitIcon(u.id)} alt={u.name} fill className="object-cover" unoptimized />
+                  </span>
                   {u.name}
                 </span>
               ))}

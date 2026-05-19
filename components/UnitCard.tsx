@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { UnitMatchupScore } from "@/lib/matchup-engine";
 import { getRecommendationLabel, getRecommendationColor, getScoreBadgeColor } from "@/lib/matchup-engine";
 import { ATTACK_TYPE_LABELS, ARMOR_TYPE_LABELS } from "@/data/damage-matrix";
+import { getUnitIcon } from "@/data/icons";
 import { cn } from "@/lib/utils";
 
 interface UnitCardProps {
@@ -32,11 +34,15 @@ export function UnitCard({ score, rank }: UnitCardProps) {
         className="w-full p-4 text-left"
       >
         <div className="flex items-start gap-3">
-          {rank && (
-            <div className="flex-shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-amber-900/60 text-xs font-bold text-amber-400">
-              {rank}
-            </div>
-          )}
+          {/* Unit icon */}
+          <div className="relative flex-shrink-0 h-10 w-10 overflow-hidden rounded-md border border-black/60 shadow-md">
+            <Image src={getUnitIcon(unit.id)} alt={unit.name} fill className="object-cover" unoptimized />
+            {rank && (
+              <div className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-black shadow">
+                {rank}
+              </div>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-bold text-amber-200">{unit.name}</span>
