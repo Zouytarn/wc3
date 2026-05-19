@@ -22,9 +22,9 @@ export const DAMAGE_MATRIX: Record<AttackType, Record<ArmorType, number>> = {
   normal:    { unarmored: 1.00, light: 1.00, medium: 1.50, heavy: 1.00, fortified: 0.70, hero: 1.00 },
   siege:     { unarmored: 1.50, light: 1.00, medium: 0.50, heavy: 1.00, fortified: 1.50, hero: 0.50 },
   magic:     { unarmored: 1.00, light: 1.25, medium: 0.75, heavy: 2.00, fortified: 0.35, hero: 0.50 },
-  chaos:     { unarmored: 1.00, light: 1.00, medium: 1.00, heavy: 1.00, fortified: 1.00, hero: 0.70 },
+  chaos:     { unarmored: 1.00, light: 1.00, medium: 1.00, heavy: 1.00, fortified: 1.00, hero: 1.00 },
   hero:      { unarmored: 1.00, light: 1.00, medium: 1.00, heavy: 1.00, fortified: 0.50, hero: 1.00 },
-  spells:    { unarmored: 1.00, light: 1.00, medium: 1.00, heavy: 1.00, fortified: 1.00, hero: 1.00 },
+  spells:    { unarmored: 1.00, light: 1.00, medium: 1.00, heavy: 1.00, fortified: 1.00, hero: 0.70 },
 };
 
 export const ATTACK_TYPE_LABELS: Record<AttackType, string> = {
