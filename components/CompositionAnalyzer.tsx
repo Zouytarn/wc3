@@ -317,7 +317,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
       <div className="rounded-xl border border-amber-900/40 bg-black/30">
         <button
           onClick={() => setCompositionMode(!compositionMode)}
-          className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-amber-950/10 transition-colors rounded-xl"
+          className="w-full flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4 text-left hover:bg-amber-950/10 transition-colors rounded-xl"
         >
           <div className="flex items-center gap-3">
             <span className="text-xl">🎯</span>
@@ -341,7 +341,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
         </button>
 
         {compositionMode && (
-          <div className="border-t border-amber-900/30 px-5 pb-5 pt-4 space-y-5">
+          <div className="border-t border-amber-900/30 px-3 sm:px-5 pb-3 sm:pb-5 pt-3 sm:pt-4 space-y-4 sm:space-y-5">
             {/* Hero picker */}
             <div>
               <div className="mb-2 flex items-center justify-between">

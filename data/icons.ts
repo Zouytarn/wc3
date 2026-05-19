@@ -5,16 +5,17 @@ const BASE = "/icons/";
 
 export const UNIT_ICONS: Record<string, string> = {
   // Human units
-  militia:        BASE + "BTNFootman.png",
+  militia:        BASE + "BTNMilitia.png",
   footman:        BASE + "BTNFootman.png",
   rifleman:       BASE + "BTNRifleman.png",
   knight:         BASE + "BTNKnight.png",
   sorceress:      BASE + "BTNSorceress.png",
   priest:         BASE + "BTNPriest.png",
-  mortar_team:    BASE + "BTNMortarTeam.png",
-  gryphon_rider:  BASE + "BTNGryphonRider.png",
   spell_breaker:  BASE + "BTNSpellBreaker.png",
+  mortar_team:    BASE + "BTNMortarTeam.png",
   flying_machine: BASE + "BTNFlyingMachine.png",
+  gryphon_rider:  BASE + "BTNGryphonRider.png",
+  dragon_hawk:    BASE + "BTNDragonHawk.png",
 
   // Orc units
   grunt:         BASE + "BTNGrunt.png",
@@ -23,12 +24,14 @@ export const UNIT_ICONS: Record<string, string> = {
   witch_doctor:  BASE + "BTNWitchDoctor.png",
   raider:        BASE + "BTNRaider.png",
   catapult:      BASE + "BTNDemolisher.png",
+  kodo_beast:    BASE + "BTNRiderlessKodo.png",
+  spirit_walker: BASE + "BTNSpiritWalker.png",
   tauren:        BASE + "BTNTauren.png",
-  spirit_walker: BASE + "BTNShaman.png",
-  wyvern:        BASE + "BTNWyvernRider.png",
+  wind_rider:    BASE + "BTNWyvern.png",
+  batrider:      BASE + "BTNTrollBatRider.png",
 
   // Night Elf units
-  wisp:               BASE + "BTNArcher.png",
+  wisp:               BASE + "BTNWisp.png",
   archer:             BASE + "BTNArcher.png",
   huntress:           BASE + "BTNHuntress.png",
   dryad:              BASE + "BTNDryad.png",
@@ -38,18 +41,20 @@ export const UNIT_ICONS: Record<string, string> = {
   hippogryph:         BASE + "BTNHippogriffRider.png",
   faerie_dragon:      BASE + "BTNFaerieDragon.png",
   chimaera:           BASE + "BTNChimaera.png",
+  glaive_thrower:     BASE + "BTNGlaiveThrower.png",
 
   // Undead units
-  ghoul:       BASE + "BTNGhoul.png",
-  crypt_fiend: BASE + "BTNCryptFiend.png",
-  necromancer: BASE + "BTNNecromancer.png",
-  banshee:     BASE + "BTNBanshee.png",
-  abomination: BASE + "BTNAbomination.png",
-  gargoyle:    BASE + "BTNGargoyle.png",
-  shade:       BASE + "BTNShade.png",
-  meat_wagon:  BASE + "BTNMeatWagon.png",
-  frost_wyrm:  BASE + "BTNFrostWyrm.png",
-  destroyer:   BASE + "BTNDestroyer.png",
+  ghoul:           BASE + "BTNGhoul.png",
+  crypt_fiend:     BASE + "BTNCryptFiend.png",
+  necromancer:     BASE + "BTNNecromancer.png",
+  banshee:         BASE + "BTNBanshee.png",
+  abomination:     BASE + "BTNAbomination.png",
+  gargoyle:        BASE + "BTNGargoyle.png",
+  shade:           BASE + "BTNShade.png",
+  meat_wagon:      BASE + "BTNMeatWagon.png",
+  obsidian_statue: BASE + "BTNObsidianStatue.png",
+  frost_wyrm:      BASE + "BTNFrostWyrm.png",
+  destroyer:       BASE + "BTNDestroyer.png",
 };
 
 export const HERO_ICONS: Record<string, string> = {

@@ -65,22 +65,22 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
     <div className="min-h-screen">
       {/* Matchup banner */}
       <div className={`border-b border-amber-900/30 bg-gradient-to-r ${RACE_THEME[myRace]} to-transparent`}>
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
           <Link
             href="/"
-            className="mb-4 inline-flex items-center gap-1.5 text-sm text-amber-700 hover:text-amber-400 transition-colors"
+            className="mb-3 inline-flex items-center gap-1.5 text-sm text-amber-700 hover:text-amber-400 transition-colors"
           >
             ← Back to Race Select
           </Link>
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
             <div>
-              <div className="text-xs text-slate-500 mb-1">Playing as</div>
-              <h2 className="text-3xl font-bold text-amber-400">{RACE_LABELS[myRace]}</h2>
+              <div className="text-xs text-slate-500 mb-0.5">Playing as</div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-amber-400">{RACE_LABELS[myRace]}</h2>
             </div>
-            <div className="text-2xl text-slate-600">vs</div>
+            <div className="text-xl sm:text-2xl text-slate-600">vs</div>
             <div>
-              <div className="text-xs text-slate-500 mb-1">Facing</div>
-              <h2 className="text-3xl font-bold text-red-400">{RACE_LABELS[enemyRace]}</h2>
+              <div className="text-xs text-slate-500 mb-0.5">Facing</div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-red-400">{RACE_LABELS[enemyRace]}</h2>
             </div>
           </div>
           <p className="mt-3 text-sm text-slate-400 max-w-2xl">{result.generalAnalysis}</p>
@@ -102,7 +102,7 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
         {/* Tab navigation — rendered as sections for simplicity */}
         <div className="space-y-12">
 

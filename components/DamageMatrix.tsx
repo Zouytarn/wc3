@@ -31,13 +31,14 @@ export function DamageMatrix() {
 
   return (
     <div className="relative">
+      <p className="mb-2 text-[10px] text-slate-600 sm:hidden">← Scroll sideways to see full table</p>
       <div className="overflow-x-auto rounded-lg border border-amber-900/30">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
               {/* Corner cell */}
-              <th className="bg-black/60 p-3 text-left text-xs text-amber-700 font-normal border-b border-r border-amber-900/30">
-                Attack ↓ / Armor →
+              <th className="bg-black/60 p-1.5 sm:p-3 text-left text-[10px] sm:text-xs text-amber-700 font-normal border-b border-r border-amber-900/30 whitespace-nowrap">
+                Atk ↓ / Armor →
               </th>
               {ARMOR_TYPES.map((armor) => (
                 <th
@@ -45,7 +46,7 @@ export function DamageMatrix() {
                   onMouseEnter={() => setHoveredArmor(armor)}
                   onMouseLeave={() => setHoveredArmor(null)}
                   className={`
-                    bg-black/60 p-3 text-xs font-bold text-center border-b border-amber-900/30 cursor-default transition-colors
+                    bg-black/60 p-1.5 sm:p-3 text-[10px] sm:text-xs font-bold text-center border-b border-amber-900/30 cursor-default transition-colors whitespace-nowrap
                     ${hoveredArmor === armor ? "text-amber-300 bg-amber-950/40" : "text-amber-600"}
                   `}
                   title={ARMOR_TYPE_DESCRIPTIONS[armor]}
@@ -62,7 +63,7 @@ export function DamageMatrix() {
                   onMouseEnter={() => setHoveredAttack(attack)}
                   onMouseLeave={() => setHoveredAttack(null)}
                   className={`
-                    p-3 text-xs font-bold border-r border-amber-900/30 cursor-default transition-colors whitespace-nowrap
+                    p-1.5 sm:p-3 text-[10px] sm:text-xs font-bold border-r border-amber-900/30 cursor-default transition-colors whitespace-nowrap
                     ${hoveredAttack === attack ? "text-amber-300 bg-amber-950/40" : "text-amber-600"}
                   `}
                   title={ATTACK_TYPE_DESCRIPTIONS[attack]}
@@ -93,9 +94,9 @@ export function DamageMatrix() {
                       }}
                       onMouseLeave={() => setTooltip(null)}
                       className={`
-                        p-3 text-center text-xs font-bold cursor-default transition-all duration-100
+                        p-1.5 sm:p-3 text-center text-[10px] sm:text-xs font-bold cursor-default transition-all duration-100
                         ${getEffectivenessColor(multiplier)}
-                        ${isActive ? "ring-1 ring-inset ring-white/30 scale-105" : ""}
+                        ${isActive ? "ring-1 ring-inset ring-white/30" : ""}
                       `}
                     >
                       {pct}%

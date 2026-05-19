@@ -23,12 +23,12 @@ export default function HomePage() {
       {/* Hero section */}
       <div className="relative overflow-hidden border-b border-amber-900/30 bg-black/30">
         <div className="absolute inset-0 bg-gradient-to-r from-amber-950/20 via-transparent to-amber-950/20 pointer-events-none" />
-        <div className="max-w-4xl mx-auto px-6 py-16 text-center">
-          <div className="mb-4 text-6xl">⚔️</div>
-          <h2 className="mb-3 text-4xl font-bold text-amber-400 tracking-wide">
+        <div className="max-w-4xl mx-auto px-4 py-8 sm:py-16 text-center">
+          <div className="mb-4 text-5xl sm:text-6xl">⚔️</div>
+          <h2 className="mb-3 text-3xl sm:text-4xl font-bold text-amber-400 tracking-wide">
             WC3 Strategy Advisor
           </h2>
-          <p className="text-lg text-amber-700 mb-2">
+          <p className="text-base sm:text-lg text-amber-700 mb-2">
             Warcraft III: Reforged
           </p>
           <p className="max-w-2xl mx-auto text-slate-400 text-sm leading-relaxed">
@@ -38,7 +38,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
         {/* Step 1: My race */}
         <section className="mb-12">
           <div className="flex items-center gap-3 mb-6">
@@ -104,7 +104,7 @@ export default function HomePage() {
             onClick={handleAnalyze}
             disabled={!myRace || !enemyRace}
             className={`
-              relative px-10 py-4 rounded-lg font-bold text-lg tracking-wide transition-all duration-200
+              relative w-full sm:w-auto px-6 sm:px-10 py-4 rounded-lg font-bold text-base sm:text-lg tracking-wide transition-all duration-200
               ${
                 myRace && enemyRace
                   ? "bg-gradient-to-r from-amber-700 to-amber-600 text-black hover:from-amber-600 hover:to-amber-500 hover:shadow-lg hover:shadow-amber-900/50 hover:scale-105 active:scale-100 cursor-pointer"
@@ -119,7 +119,7 @@ export default function HomePage() {
         </div>
 
         {/* Info cards */}
-        <div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mt-10 sm:mt-16 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
             {
               icon: "🎯",
