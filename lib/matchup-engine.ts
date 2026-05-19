@@ -1,6 +1,7 @@
 import { DAMAGE_MATRIX, getEffectivenessLabel } from "@/data/damage-matrix";
 import { UNITS_BY_RACE, type Unit, type Race } from "@/data/units";
 import { HEROES_BY_RACE, type Hero } from "@/data/heroes";
+import { getBuildOrder } from "@/data/build-orders";
 
 export interface UnitMatchupScore {
   unit: Unit;
@@ -202,10 +203,23 @@ export function computeMatchup(myRace: Race, enemyRace: Race): MatchupResult {
   // Sort by overall score descending
   unitScores.sort((a, b) => b.overallScore - a.overallScore);
 
-  // Score heroes
-  const heroScores: HeroMatchupScore[] = myHeroes.map((hero) =>
-    scoreHero(hero, enemyRace, enemyUnits)
-  );
+  // Score heroes — incorporate build order's heroFirst as authoritative "primary" signal
+  const buildOrder = getBuildOrder(myRace, enemyRace);
+  const heroFirstId = buildOrder?.heroFirst;
+
+  const heroScores: HeroMatchupScore[] = myHeroes.map((hero) => {
+    const score = scoreHero(hero, enemyRace, enemyUnits);
+    // The build order's heroFirst is the ground truth for first pick.
+    // Override recommendation and boost score so it always surfaces as primary.
+    if (heroFirstId && hero.id === heroFirstId) {
+      score.recommendation = "primary";
+      score.relevanceScore = Math.max(score.relevanceScore, 2.0); // ensure top rank
+      if (!score.strongPoints.some((p) => p.includes("first hero"))) {
+        score.strongPoints.unshift(`Recommended first hero pick for this matchup`);
+      }
+    }
+    return score;
+  });
   heroScores.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
   const topUnits = unitScores
