@@ -19,131 +19,101 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0f] via-[#0d0d1a] to-[#0a0a0f]">
-      {/* Hero section */}
-      <div className="relative overflow-hidden border-b border-amber-900/30 bg-black/30">
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-950/20 via-transparent to-amber-950/20 pointer-events-none" />
-        <div className="max-w-4xl mx-auto px-4 py-8 sm:py-16 text-center">
-          <div className="mb-4 text-5xl sm:text-6xl">⚔️</div>
-          <h2 className="mb-3 text-3xl sm:text-4xl font-bold text-amber-400 tracking-wide">
-            WC3 Strategy Advisor
-          </h2>
-          <p className="text-base sm:text-lg text-amber-700 mb-2">
-            Warcraft III: Reforged
-          </p>
-          <p className="max-w-2xl mx-auto text-slate-400 text-sm leading-relaxed">
-            Select your race and your opponent&apos;s race to get optimized unit counter-picks,
-            hero recommendations, and a complete build order — all based on armor/damage type mathematics.
-          </p>
-        </div>
+    <div className="min-h-screen">
+      {/* Hero */}
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-16 sm:pt-24 pb-12 text-center">
+        <p className="label-section mb-4">Warcraft III: Reforged</p>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
+          Strategy Advisor
+        </h1>
+        <p className="mt-4 text-base text-white/50 max-w-xl mx-auto leading-relaxed">
+          Select your race and your opponent's race to get unit counter-picks,
+          hero picks, and a complete build order — driven by WC3's damage &amp; armor matrix.
+        </p>
       </div>
 
-      <div className="max-w-5xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
-        {/* Step 1: My race */}
-        <section className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-600 text-sm font-bold text-black">
-              1
-            </div>
-            <h3 className="text-xl font-bold text-amber-300">Choose Your Race</h3>
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 pb-20 space-y-12">
+
+        {/* Step 1 */}
+        <section>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="label-section">Step 1</span>
+            <span className="text-white/20 text-xs">·</span>
+            <span className="text-sm font-medium text-white/80">Your Race</span>
             {myRace && (
-              <span className="ml-2 rounded-full bg-amber-900/40 px-3 py-1 text-sm text-amber-400 border border-amber-700">
+              <span className="ml-auto text-xs text-amber-400/80 font-medium">
                 {RACE_LABELS[myRace]} selected
               </span>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {RACES.map((race) => (
               <RaceCard
                 key={race}
                 race={race}
                 selected={myRace === race}
-                label="My Race"
                 onClick={setMyRace}
               />
             ))}
           </div>
         </section>
 
-        {/* Step 2: Enemy race */}
-        <section className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                myRace ? "bg-amber-600 text-black" : "bg-slate-700 text-slate-500"
-              }`}
-            >
-              2
-            </div>
-            <h3 className={`text-xl font-bold ${myRace ? "text-amber-300" : "text-slate-600"}`}>
-              Choose Enemy Race
-            </h3>
+        {/* Step 2 */}
+        <section>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="label-section">Step 2</span>
+            <span className="text-white/20 text-xs">·</span>
+            <span className={`text-sm font-medium ${myRace ? "text-white/80" : "text-white/25"}`}>
+              Enemy Race
+            </span>
             {enemyRace && (
-              <span className="ml-2 rounded-full bg-red-900/40 px-3 py-1 text-sm text-red-400 border border-red-700">
+              <span className="ml-auto text-xs text-red-400/80 font-medium">
                 {RACE_LABELS[enemyRace]} (enemy)
               </span>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {RACES.map((race) => (
               <RaceCard
                 key={race}
                 race={race}
                 selected={enemyRace === race}
                 disabled={!myRace}
-                label="Enemy"
                 onClick={setEnemyRace}
               />
             ))}
           </div>
         </section>
 
-        {/* Analyze button */}
-        <div className="flex justify-center">
+        {/* CTA */}
+        <div className="flex justify-center pt-2">
           <button
             onClick={handleAnalyze}
             disabled={!myRace || !enemyRace}
             className={`
-              relative w-full sm:w-auto px-6 sm:px-10 py-4 rounded-lg font-bold text-base sm:text-lg tracking-wide transition-all duration-200
-              ${
-                myRace && enemyRace
-                  ? "bg-gradient-to-r from-amber-700 to-amber-600 text-black hover:from-amber-600 hover:to-amber-500 hover:shadow-lg hover:shadow-amber-900/50 hover:scale-105 active:scale-100 cursor-pointer"
-                  : "bg-slate-800 text-slate-600 cursor-not-allowed"
+              px-8 py-3.5 rounded-2xl font-semibold text-sm tracking-tight transition-all duration-200
+              ${myRace && enemyRace
+                ? "bg-amber-500 text-black hover:bg-amber-400 active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/20"
+                : "bg-white/[0.06] text-white/25 cursor-not-allowed"
               }
             `}
           >
             {myRace && enemyRace
-              ? `Analyze ${RACE_LABELS[myRace]} vs ${RACE_LABELS[enemyRace]} →`
+              ? `Analyze ${RACE_LABELS[myRace]} vs ${RACE_LABELS[enemyRace]}`
               : "Select both races to continue"}
           </button>
         </div>
 
-        {/* Info cards */}
-        <div className="mt-10 sm:mt-16 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Feature highlights */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 pt-4">
           {[
-            {
-              icon: "🎯",
-              title: "Damage & Armor",
-              desc: "Every matchup analyzed using the complete WC3 damage type vs armor type multiplier matrix.",
-            },
-            {
-              icon: "🗡️",
-              title: "Unit Counter-Picks",
-              desc: "See which of your units deal the most damage to the specific units your enemy can field.",
-            },
-            {
-              icon: "📋",
-              title: "Build Orders",
-              desc: "Step-by-step build orders for all 16 race matchup combinations with timing and priority.",
-            },
+            { title: "Damage Matrix", desc: "Every matchup scored using the full WC3 attack vs armor multiplier table." },
+            { title: "Counter-Picks", desc: "See which units deal bonus damage to your opponent's specific army comp." },
+            { title: "Build Orders", desc: "Step-by-step timings for all 16 race matchup combinations." },
           ].map((card) => (
-            <div
-              key={card.title}
-              className="rounded-lg border border-amber-900/30 bg-black/30 p-5"
-            >
-              <div className="mb-2 text-2xl">{card.icon}</div>
-              <h4 className="mb-1 font-bold text-amber-400">{card.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{card.desc}</p>
+            <div key={card.title} className="surface rounded-2xl p-5">
+              <p className="font-semibold text-sm text-white/80 mb-1.5">{card.title}</p>
+              <p className="text-xs text-white/40 leading-relaxed">{card.desc}</p>
             </div>
           ))}
         </div>

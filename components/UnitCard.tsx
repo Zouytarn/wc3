@@ -16,97 +16,87 @@ interface UnitCardProps {
 export function UnitCard({ score, rank }: UnitCardProps) {
   const [expanded, setExpanded] = useState(false);
   const { unit, offensiveScore, defensiveScore, overallScore, effectivenessVsEnemyUnits, explanation, recommendation } = score;
-
   const pct = Math.round(overallScore * 100);
 
+  const borderColor = {
+    highly_recommended: "border-emerald-500/30",
+    recommended:        "border-amber-500/20",
+    situational:        "border-white/[0.08]",
+    avoid:              "border-red-500/20",
+  }[recommendation];
+
   return (
-    <div
-      className={cn(
-        "rounded-lg border bg-black/40 transition-all duration-200",
-        recommendation === "highly_recommended" && "border-green-800",
-        recommendation === "recommended" && "border-yellow-800",
-        recommendation === "situational" && "border-orange-800",
-        recommendation === "avoid" && "border-red-900 opacity-60"
-      )}
-    >
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 text-left"
-      >
-        <div className="flex items-start gap-3">
-          {/* Unit icon */}
-          <div className="relative flex-shrink-0 h-10 w-10 overflow-hidden rounded-md border border-black/60 shadow-md">
+    <div className={cn("rounded-2xl border bg-white/[0.03] transition-all duration-150", borderColor)}>
+      <button onClick={() => setExpanded(!expanded)} className="w-full p-4 text-left">
+        <div className="flex items-center gap-3">
+          {/* Icon */}
+          <div className="relative flex-shrink-0 h-10 w-10 overflow-hidden rounded-xl border border-white/10">
             <Image src={getUnitIcon(unit.id)} alt={unit.name} fill className="object-cover" unoptimized />
             {rank && (
-              <div className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-black shadow">
+              <div className="absolute -top-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-black">
                 {rank}
               </div>
             )}
           </div>
+
+          {/* Name + tags */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-amber-200">{unit.name}</span>
-              <span className={cn("text-xs font-medium", getRecommendationColor(recommendation))}>
+              <span className="font-semibold text-sm text-white">{unit.name}</span>
+              <span className={cn("text-[11px] font-medium", getRecommendationColor(recommendation))}>
                 {getRecommendationLabel(recommendation)}
               </span>
             </div>
-            <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
+            <div className="mt-0.5 flex flex-wrap gap-1.5 text-[11px] text-white/35">
               <span>T{unit.tier}</span>
-              <span>•</span>
-              <span>{ATTACK_TYPE_LABELS[unit.attackType]} dmg</span>
-              <span>•</span>
-              <span>{ARMOR_TYPE_LABELS[unit.armorType]} armor</span>
-              <span>•</span>
-              <span>{unit.range}</span>
-              <span>•</span>
-              <span>{unit.goldCost}g {unit.lumberCost > 0 ? `${unit.lumberCost}w` : ""}</span>
+              <span>·</span>
+              <span>{ATTACK_TYPE_LABELS[unit.attackType]}</span>
+              <span>·</span>
+              <span>{ARMOR_TYPE_LABELS[unit.armorType]}</span>
+              <span>·</span>
+              <span>{unit.goldCost}g</span>
             </div>
           </div>
-          <div className="flex-shrink-0 text-right">
-            <div className={cn("rounded-full border px-2 py-0.5 text-xs font-bold", getScoreBadgeColor(overallScore))}>
+
+          {/* Score + chevron */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold border", getScoreBadgeColor(overallScore))}>
               {pct}%
-            </div>
-            <div className="mt-1 text-xs text-slate-600">{expanded ? "▲" : "▼"}</div>
+            </span>
+            <span className={cn("text-white/25 text-xs transition-transform duration-200", expanded && "rotate-180")}>
+              ▼
+            </span>
           </div>
         </div>
 
         {/* Score bars */}
-        <div className="mt-3 space-y-1">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-20 text-slate-500">Offensive</span>
-            <div className="flex-1 h-1.5 rounded-full bg-slate-800">
-              <div
-                className="h-full rounded-full bg-green-600 transition-all"
-                style={{ width: `${Math.min(offensiveScore * 70, 100)}%` }}
-              />
+        <div className="mt-3 space-y-1.5">
+          {[
+            { label: "Offense", val: offensiveScore, color: "bg-emerald-500" },
+            { label: "Defense", val: defensiveScore, color: "bg-blue-500" },
+          ].map(({ label, val, color }) => (
+            <div key={label} className="flex items-center gap-2">
+              <span className="w-12 text-[11px] text-white/30">{label}</span>
+              <div className="flex-1 h-1 rounded-full bg-white/[0.08]">
+                <div className={cn("h-full rounded-full transition-all", color)} style={{ width: `${Math.min(val * 70, 100)}%` }} />
+              </div>
+              <span className="w-7 text-right text-[11px] text-white/40">{Math.round(val * 100)}%</span>
             </div>
-            <span className="w-8 text-right text-slate-400">{Math.round(offensiveScore * 100)}%</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-20 text-slate-500">Defensive</span>
-            <div className="flex-1 h-1.5 rounded-full bg-slate-800">
-              <div
-                className="h-full rounded-full bg-blue-600 transition-all"
-                style={{ width: `${Math.min(defensiveScore * 70, 100)}%` }}
-              />
-            </div>
-            <span className="w-8 text-right text-slate-400">{Math.round(defensiveScore * 100)}%</span>
-          </div>
+          ))}
         </div>
       </button>
 
-      {/* Expanded details */}
       {expanded && (
-        <div className="border-t border-slate-800 px-4 pb-4 pt-3 text-xs text-slate-400 space-y-3">
-          <p className="text-slate-300">{explanation}</p>
+        <div className="border-t border-white/[0.06] px-4 pb-4 pt-3 text-xs space-y-4">
+          <p className="text-white/60 leading-relaxed">{explanation}</p>
 
           {unit.special.length > 0 && (
             <div>
-              <div className="font-bold text-amber-600 mb-1">Special Abilities</div>
-              <ul className="space-y-0.5">
+              <p className="label-section mb-2">Abilities</p>
+              <ul className="space-y-1">
                 {unit.special.map((s) => (
-                  <li key={s} className="flex items-start gap-1.5">
-                    <span className="text-amber-700 mt-0.5">•</span>
+                  <li key={s} className="flex items-start gap-2 text-white/50">
+                    <span className="text-amber-500/60 mt-0.5 flex-shrink-0">·</span>
                     {s}
                   </li>
                 ))}
@@ -115,19 +105,16 @@ export function UnitCard({ score, rank }: UnitCardProps) {
           )}
 
           <div>
-            <div className="font-bold text-amber-600 mb-1">Effectiveness vs Enemy Units</div>
+            <p className="label-section mb-2">Effectiveness vs Enemy</p>
             <div className="grid grid-cols-2 gap-1">
-              {effectivenessVsEnemyUnits.map(({ enemyUnit, multiplier, label }) => (
-                <div key={enemyUnit.id} className="flex items-center justify-between rounded bg-black/30 px-2 py-1">
-                  <span className="text-slate-400">{enemyUnit.name}</span>
-                  <span
-                    className={cn(
-                      "font-bold",
-                      multiplier >= 1.5 ? "text-green-400" :
-                      multiplier >= 1.0 ? "text-yellow-400" :
-                      "text-red-400"
-                    )}
-                  >
+              {effectivenessVsEnemyUnits.map(({ enemyUnit, multiplier }) => (
+                <div key={enemyUnit.id} className="flex items-center justify-between rounded-lg bg-white/[0.04] px-2.5 py-1.5">
+                  <span className="text-white/50 truncate pr-1">{enemyUnit.name}</span>
+                  <span className={cn(
+                    "font-semibold flex-shrink-0",
+                    multiplier >= 1.5 ? "text-emerald-400" :
+                    multiplier >= 1.0 ? "text-amber-400" : "text-red-400"
+                  )}>
                     {Math.round(multiplier * 100)}%
                   </span>
                 </div>
@@ -135,20 +122,20 @@ export function UnitCard({ score, rank }: UnitCardProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 pt-1">
             <div>
-              <div className="font-bold text-slate-500 mb-1">Stats</div>
-              <div className="space-y-0.5 text-slate-500">
-                <div>HP: <span className="text-slate-300">{unit.hp}</span></div>
-                <div>DMG: <span className="text-slate-300">{unit.damage}</span></div>
-                <div>Food: <span className="text-slate-300">{unit.foodCost}</span></div>
-                <div>Speed: <span className="text-slate-300">{unit.speed}</span></div>
+              <p className="label-section mb-1.5">Stats</p>
+              <div className="space-y-0.5 text-white/40">
+                <div>HP <span className="text-white/60">{unit.hp}</span></div>
+                <div>Dmg <span className="text-white/60">{unit.damage}</span></div>
+                <div>Food <span className="text-white/60">{unit.foodCost}</span></div>
+                <div>Speed <span className="text-white/60">{unit.speed}</span></div>
               </div>
             </div>
             {unit.description && (
               <div>
-                <div className="font-bold text-slate-500 mb-1">Overview</div>
-                <p className="text-slate-500">{unit.description}</p>
+                <p className="label-section mb-1.5">Overview</p>
+                <p className="text-white/40 leading-relaxed">{unit.description}</p>
               </div>
             )}
           </div>
