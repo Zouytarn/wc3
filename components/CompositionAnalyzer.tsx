@@ -18,17 +18,14 @@ function scoreUnitVsComposition(unit: Unit, enemyUnits: Unit[], enemyHeroes: Her
     ...enemyUnits,
     ...enemyHeroes.map((h) => ({ id: h.id, name: h.name, attackType: h.attackType, armorType: h.armorType } as Unit)),
   ];
-
   if (allTargets.length === 0) {
     return { unit, offensiveScore: 1.0, defensiveScore: 1.0, overallScore: 1.0, effectivenessVsEnemyUnits: [], explanation: "No composition selected.", recommendation: "situational" };
   }
-
   const details = allTargets.map((t) => ({
     enemyUnit: t,
     multiplier: DAMAGE_MATRIX[unit.attackType][t.armorType],
     label: getEffectivenessLabel(DAMAGE_MATRIX[unit.attackType][t.armorType]),
   }));
-
   const offensiveScore = details.reduce((s, d) => s + d.multiplier, 0) / details.length;
   const allAttackers = [...enemyUnits, ...enemyHeroes.map((h) => ({ attackType: h.attackType } as Unit))];
   const avgIncoming = allAttackers.length > 0
@@ -36,20 +33,14 @@ function scoreUnitVsComposition(unit: Unit, enemyUnits: Unit[], enemyHeroes: Her
     : 1.0;
   const defensiveScore = 1 / avgIncoming;
   const overallScore = offensiveScore * 0.65 + defensiveScore * 0.35;
-
   const strongVs = details.filter((d) => d.multiplier >= 1.25).map((d) => `${d.enemyUnit.name} (${Math.round(d.multiplier * 100)}%)`);
   const weakVs = details.filter((d) => d.multiplier < 0.75).map((d) => `${d.enemyUnit.name} (${Math.round(d.multiplier * 100)}%)`);
-
   let explanation = `${unit.name} uses ${unit.attackType} attack. `;
   if (strongVs.length > 0) explanation += `Bonus damage vs: ${strongVs.join(", ")}. `;
   if (weakVs.length > 0) explanation += `Reduced vs: ${weakVs.join(", ")}. `;
   if (!strongVs.length && !weakVs.length) explanation += "Consistent damage across selected composition.";
-
   const recommendation: UnitMatchupScore["recommendation"] =
-    overallScore >= 1.3 ? "highly_recommended" :
-    overallScore >= 1.05 ? "recommended" :
-    overallScore >= 0.85 ? "situational" : "avoid";
-
+    overallScore >= 1.3 ? "highly_recommended" : overallScore >= 1.05 ? "recommended" : overallScore >= 0.85 ? "situational" : "avoid";
   return { unit, offensiveScore, defensiveScore, overallScore, effectivenessVsEnemyUnits: details, explanation, recommendation };
 }
 
@@ -58,71 +49,41 @@ function scoreHeroVsComposition(hero: Hero, enemyRace: Race, enemyUnits: Unit[],
   let relevanceScore = isFirstPick ? 2.0 : 1.0;
   const strongPoints: string[] = [];
   const weakPoints: string[] = [];
-
   if (isFirstPick) strongPoints.unshift("Recommended first hero pick for this matchup");
-
   if (allTargets.length > 0) {
     const avgMult = allTargets.reduce((s, t) => s + DAMAGE_MATRIX[hero.attackType][t.armorType], 0) / allTargets.length;
     relevanceScore *= avgMult;
   }
-  if (!isFirstPick && hero.strongVs.includes(enemyRace)) {
-    relevanceScore += 0.3;
-    strongPoints.push(`Generally strong vs ${RACE_LABELS[enemyRace]}`);
-  }
-
+  if (!isFirstPick && hero.strongVs.includes(enemyRace)) { relevanceScore += 0.3; strongPoints.push(`Generally strong vs ${RACE_LABELS[enemyRace]}`); }
   const hasHeavy = allTargets.some((t) => t.armorType === "heavy");
   const hasLight = allTargets.some((t) => t.armorType === "light");
   const hasManyUnits = allTargets.length >= 4;
   const enemyHeroNames = enemyHeroes.map((h) => h.name.toLowerCase());
-
   for (const ability of hero.abilities) {
     const desc = ability.description.toLowerCase();
     const name = ability.name.toLowerCase();
-
     if (ability.type === "aura") { strongPoints.push(`${ability.name} aura boosts your army`); relevanceScore += 0.2; }
-    if ((name.includes("hex") || desc.includes("hex")) && enemyHeroNames.some((n) => n.includes("paladin"))) {
-      strongPoints.push("Hex disables Paladin — shuts down Holy Light"); relevanceScore += 0.35;
-    }
-    if ((desc.includes("mana burn") || name.includes("mana burn")) && (enemyHeroNames.some((n) => n.includes("archmage")) || enemyUnits.some((u) => u.id === "priest"))) {
-      strongPoints.push("Mana Burn destroys Archmage/Priest mana pool"); relevanceScore += 0.3;
-    }
-    if (desc.includes("stun") || desc.includes("root") || desc.includes("hex")) {
-      strongPoints.push(`${ability.name} provides crowd control`); relevanceScore += 0.1;
-    }
-    if (ability.type === "ultimate" && hasManyUnits) {
-      strongPoints.push(`${ability.name} ultimate strong vs large ${RACE_LABELS[enemyRace]} army`); relevanceScore += 0.05;
-    }
-    if (hasHeavy && desc.includes("magic")) {
-      strongPoints.push(`${ability.name} magic damage is 200% vs heavy armor`); relevanceScore += 0.15;
-    }
-    if (hasLight && name.includes("fan of knives")) {
-      strongPoints.push("Fan of Knives devastates grouped light-armor units"); relevanceScore += 0.3;
-    }
+    if ((name.includes("hex") || desc.includes("hex")) && enemyHeroNames.some((n) => n.includes("paladin"))) { strongPoints.push("Hex disables Paladin — shuts down Holy Light"); relevanceScore += 0.35; }
+    if ((desc.includes("mana burn") || name.includes("mana burn")) && (enemyHeroNames.some((n) => n.includes("archmage")) || enemyUnits.some((u) => u.id === "priest"))) { strongPoints.push("Mana Burn destroys Archmage/Priest mana pool"); relevanceScore += 0.3; }
+    if (desc.includes("stun") || desc.includes("root") || desc.includes("hex")) { strongPoints.push(`${ability.name} provides crowd control`); relevanceScore += 0.1; }
+    if (ability.type === "ultimate" && hasManyUnits) { strongPoints.push(`${ability.name} ultimate strong vs large ${RACE_LABELS[enemyRace]} army`); relevanceScore += 0.05; }
+    if (hasHeavy && desc.includes("magic")) { strongPoints.push(`${ability.name} magic damage is 200% vs heavy armor`); relevanceScore += 0.15; }
+    if (hasLight && name.includes("fan of knives")) { strongPoints.push("Fan of Knives devastates grouped light-armor units"); relevanceScore += 0.3; }
   }
-
   if (hero.role === "int") weakPoints.push("Fragile — keep behind frontline.");
   if (hero.range === "melee" && enemyRace === "nightelf") weakPoints.push("Vulnerable to Keeper Entangle.");
-
   const recommendation: HeroMatchupScore["recommendation"] =
-    isFirstPick ? "primary" :
-    relevanceScore >= 1.5 ? "primary" :
-    relevanceScore >= 1.1 ? "secondary" : "situational";
-
+    isFirstPick ? "primary" : relevanceScore >= 1.5 ? "primary" : relevanceScore >= 1.1 ? "secondary" : "situational";
   return { hero, relevanceScore, strongPoints, weakPoints, recommendation };
 }
 
-// Small toggle chip for composition picker
-function ToggleChip({ label, sub, iconSrc, active, onClick }: {
-  label: string; sub: string; iconSrc: string; active: boolean; onClick: () => void;
-}) {
+function ToggleChip({ label, sub, iconSrc, active, onClick }: { label: string; sub: string; iconSrc: string; active: boolean; onClick: () => void; }) {
   return (
     <button
       onClick={onClick}
       className={cn(
         "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-xs transition-all duration-150",
-        active
-          ? "border-amber-500/40 bg-amber-500/10 text-white"
-          : "border-white/[0.07] bg-white/[0.03] text-white/40 hover:border-white/[0.12] hover:text-white/60"
+        active ? "border-amber-500/40 bg-amber-500/10 text-white" : "border-white/[0.07] bg-white/[0.03] text-white/40 hover:border-white/[0.15] hover:text-white/60"
       )}
     >
       <div className={cn("relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg border", active ? "border-amber-500/40" : "border-white/[0.08]")}>
@@ -136,119 +97,92 @@ function ToggleChip({ label, sub, iconSrc, active, onClick }: {
   );
 }
 
-interface CompositionAnalyzerProps {
-  myRace: Race;
-  enemyRace: Race;
-  defaultResult: MatchupResult;
-}
+interface CompositionAnalyzerProps { myRace: Race; enemyRace: Race; defaultResult: MatchupResult; }
 
 export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: CompositionAnalyzerProps) {
   const allEnemyUnits = UNITS_BY_RACE[enemyRace];
   const allEnemyHeroes = HEROES_BY_RACE[enemyRace];
   const myUnits = UNITS_BY_RACE[myRace];
   const myHeroes = HEROES_BY_RACE[myRace];
-
   const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(new Set());
   const [selectedHeroIds, setSelectedHeroIds] = useState<Set<string>>(new Set());
   const [compositionMode, setCompositionMode] = useState(false);
-
   const buildOrder = getBuildOrder(myRace, enemyRace);
   const heroFirstId = buildOrder?.heroFirst;
-
-  const toggleUnit = (id: string) => setSelectedUnitIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const toggleHero = (id: string) => setSelectedHeroIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleUnit = (id: string) => setSelectedUnitIds((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleHero = (id: string) => setSelectedHeroIds((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const hasSelection = selectedUnitIds.size > 0 || selectedHeroIds.size > 0;
 
   const customResult = useMemo(() => {
     if (!compositionMode || !hasSelection) return null;
-    const selectedUnits = allEnemyUnits.filter((u) => selectedUnitIds.has(u.id));
-    const selectedHeroes = allEnemyHeroes.filter((h) => selectedHeroIds.has(h.id));
+    const su = allEnemyUnits.filter((u) => selectedUnitIds.has(u.id));
+    const sh = allEnemyHeroes.filter((h) => selectedHeroIds.has(h.id));
     return {
-      unitScores: myUnits.map((u) => scoreUnitVsComposition(u, selectedUnits, selectedHeroes)).sort((a, b) => b.overallScore - a.overallScore),
-      heroScores: myHeroes.map((h) => scoreHeroVsComposition(h, enemyRace, selectedUnits, selectedHeroes, h.id === heroFirstId)).sort((a, b) => b.relevanceScore - a.relevanceScore),
+      unitScores: myUnits.map((u) => scoreUnitVsComposition(u, su, sh)).sort((a, b) => b.overallScore - a.overallScore),
+      heroScores: myHeroes.map((h) => scoreHeroVsComposition(h, enemyRace, su, sh, h.id === heroFirstId)).sort((a, b) => b.relevanceScore - a.relevanceScore),
     };
   }, [compositionMode, selectedUnitIds, selectedHeroIds, allEnemyUnits, allEnemyHeroes, myUnits, myHeroes, enemyRace, heroFirstId]);
 
   const activeUnitScores = (compositionMode && customResult) ? customResult.unitScores : defaultResult.unitScores;
   const activeHeroScores = (compositionMode && customResult) ? customResult.heroScores : defaultResult.heroScores;
   const isCustomMode = compositionMode && hasSelection;
-
   const unitsByTier: Record<number, Unit[]> = { 1: [], 2: [], 3: [] };
   allEnemyUnits.forEach((u) => { if (u.tier in unitsByTier) unitsByTier[u.tier].push(u); });
-
   const recommended = activeUnitScores.filter((s) => s.recommendation === "highly_recommended" || s.recommendation === "recommended");
   const situational  = activeUnitScores.filter((s) => s.recommendation === "situational");
   const avoid        = activeUnitScores.filter((s) => s.recommendation === "avoid");
 
   return (
     <div className="space-y-10">
-
-      {/* Enemy Composition Picker */}
-      <div className="surface rounded-2xl overflow-hidden">
+      {/* Composition picker */}
+      <div className="bg-white/[0.05] border border-white/[0.09] rounded-2xl overflow-hidden">
         <button
           onClick={() => setCompositionMode(!compositionMode)}
           className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.03] transition-colors"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-semibold text-sm text-white">Enemy Composition</p>
-                {isCustomMode && (
-                  <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-400 font-medium">
-                    {selectedUnitIds.size + selectedHeroIds.size} selected
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-white/35 mt-0.5">
-                {compositionMode ? "Select what the enemy is running for tailored counter-picks" : "Specify the enemy's exact composition"}
-              </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-sm text-white">Enemy Composition</p>
+              {isCustomMode && (
+                <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-400 font-medium">
+                  {selectedUnitIds.size + selectedHeroIds.size} selected
+                </span>
+              )}
             </div>
+            <p className="text-[11px] text-white/35 mt-0.5">
+              {compositionMode ? "Select what the enemy is running for tailored counter-picks" : "Specify the enemy's exact composition for precise results"}
+            </p>
           </div>
           <span className={cn("text-white/30 text-xs transition-transform duration-200 flex-shrink-0 ml-4", compositionMode && "rotate-180")}>▼</span>
         </button>
 
         {compositionMode && (
           <div className="border-t border-white/[0.06] px-4 sm:px-5 pb-5 pt-4 space-y-5">
-            {/* Heroes */}
             <div>
               <div className="flex items-center justify-between mb-2.5">
-                <p className="label-section">Enemy Heroes</p>
-                {selectedHeroIds.size > 0 && (
-                  <button onClick={() => setSelectedHeroIds(new Set())} className="text-[11px] text-white/25 hover:text-white/50">clear</button>
-                )}
+                <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Enemy Heroes</p>
+                {selectedHeroIds.size > 0 && <button onClick={() => setSelectedHeroIds(new Set())} className="text-[11px] text-white/25 hover:text-white/60">clear</button>}
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {allEnemyHeroes.map((hero) => (
-                  <ToggleChip key={hero.id} label={hero.name} sub={`${hero.primaryStat} · ${hero.range}`} iconSrc={getHeroIcon(hero.id)} active={selectedHeroIds.has(hero.id)} onClick={() => toggleHero(hero.id)} />
-                ))}
+                {allEnemyHeroes.map((h) => <ToggleChip key={h.id} label={h.name} sub={`${h.primaryStat} · ${h.range}`} iconSrc={getHeroIcon(h.id)} active={selectedHeroIds.has(h.id)} onClick={() => toggleHero(h.id)} />)}
               </div>
             </div>
-
-            {/* Units by tier */}
             {[1, 2, 3].map((tier) => (
               <div key={tier}>
                 <div className="flex items-center justify-between mb-2.5">
-                  <p className="label-section">Tier {tier} Units</p>
+                  <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Tier {tier} Units</p>
                   {unitsByTier[tier].some((u) => selectedUnitIds.has(u.id)) && (
-                    <button
-                      onClick={() => setSelectedUnitIds((prev) => { const n = new Set(prev); unitsByTier[tier].forEach((u) => n.delete(u.id)); return n; })}
-                      className="text-[11px] text-white/25 hover:text-white/50"
-                    >
-                      clear tier {tier}
-                    </button>
+                    <button onClick={() => setSelectedUnitIds((p) => { const n = new Set(p); unitsByTier[tier].forEach((u) => n.delete(u.id)); return n; })} className="text-[11px] text-white/25 hover:text-white/60">clear tier {tier}</button>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                  {unitsByTier[tier].map((unit) => (
-                    <ToggleChip key={unit.id} label={unit.name} sub={`${ATTACK_TYPE_LABELS[unit.attackType]} / ${ARMOR_TYPE_LABELS[unit.armorType]}`} iconSrc={getUnitIcon(unit.id)} active={selectedUnitIds.has(unit.id)} onClick={() => toggleUnit(unit.id)} />
-                  ))}
+                  {unitsByTier[tier].map((u) => <ToggleChip key={u.id} label={u.name} sub={`${ATTACK_TYPE_LABELS[u.attackType]} / ${ARMOR_TYPE_LABELS[u.armorType]}`} iconSrc={getUnitIcon(u.id)} active={selectedUnitIds.has(u.id)} onClick={() => toggleUnit(u.id)} />)}
                 </div>
               </div>
             ))}
-
             <div className="flex items-center gap-3 pt-1">
               {hasSelection && (
-                <button onClick={() => { setSelectedUnitIds(new Set()); setSelectedHeroIds(new Set()); }} className="rounded-xl border border-white/[0.08] px-4 py-2 text-xs text-white/40 hover:text-white/70 hover:border-white/[0.15] transition-colors">
+                <button onClick={() => { setSelectedUnitIds(new Set()); setSelectedHeroIds(new Set()); }} className="rounded-xl border border-white/[0.08] px-4 py-2 text-xs text-white/40 hover:text-white/70 hover:border-white/[0.18] transition-colors">
                   Clear all
                 </button>
               )}
@@ -260,24 +194,20 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
         )}
       </div>
 
-      {/* Active composition badge strip */}
+      {/* Active composition strip */}
       {isCustomMode && (
-        <div className="surface rounded-2xl px-4 py-3">
+        <div className="bg-white/[0.05] border border-white/[0.09] rounded-2xl px-4 py-3">
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="text-white/40 font-medium mr-1">Analyzing vs:</span>
             {allEnemyHeroes.filter((h) => selectedHeroIds.has(h.id)).map((h) => (
               <span key={h.id} className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 pl-1 pr-2.5 py-0.5 text-amber-300">
-                <span className="relative h-4 w-4 overflow-hidden rounded-full flex-shrink-0">
-                  <Image src={getHeroIcon(h.id)} alt={h.name} fill className="object-cover" unoptimized />
-                </span>
+                <span className="relative h-4 w-4 overflow-hidden rounded-full flex-shrink-0"><Image src={getHeroIcon(h.id)} alt={h.name} fill className="object-cover" unoptimized /></span>
                 {h.name}
               </span>
             ))}
             {allEnemyUnits.filter((u) => selectedUnitIds.has(u.id)).map((u) => (
               <span key={u.id} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] pl-1 pr-2.5 py-0.5 text-white/60">
-                <span className="relative h-4 w-4 overflow-hidden rounded-full flex-shrink-0">
-                  <Image src={getUnitIcon(u.id)} alt={u.name} fill className="object-cover" unoptimized />
-                </span>
+                <span className="relative h-4 w-4 overflow-hidden rounded-full flex-shrink-0"><Image src={getUnitIcon(u.id)} alt={u.name} fill className="object-cover" unoptimized /></span>
                 {u.name}
               </span>
             ))}
@@ -289,23 +219,19 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
         </div>
       )}
 
-      {/* Unit Recommendations */}
+      {/* Units */}
       <section>
         <div className="flex items-center gap-3 mb-5">
-          <p className="label-section">Unit Recommendations</p>
+          <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Unit Recommendations</p>
           {isCustomMode && <span className="rounded-full bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 text-[10px] text-amber-400">Custom</span>}
         </div>
-
         {!isCustomMode && (
           <p className="mb-4 text-xs text-white/35">
             Ranked vs all {RACE_LABELS[enemyRace]} units. Use{" "}
-            <button onClick={() => setCompositionMode(true)} className="text-amber-400/70 hover:text-amber-400 underline underline-offset-2">
-              Enemy Composition
-            </button>{" "}
+            <button onClick={() => setCompositionMode(true)} className="text-amber-400/70 hover:text-amber-400 underline underline-offset-2">Enemy Composition</button>{" "}
             above for precise results.
           </p>
         )}
-
         {recommended.length > 0 && (
           <div className="mb-5">
             <p className="text-xs font-medium text-emerald-400/80 mb-3">Recommended ({recommended.length})</p>
@@ -338,10 +264,10 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
         )}
       </section>
 
-      {/* Hero Recommendations */}
+      {/* Heroes */}
       <section>
         <div className="flex items-center gap-3 mb-5">
-          <p className="label-section">Hero Recommendations</p>
+          <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Hero Recommendations</p>
           {isCustomMode && <span className="rounded-full bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 text-[10px] text-amber-400">Custom</span>}
         </div>
         <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
@@ -354,7 +280,6 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
 
 function CompositionInsights({ selectedUnits, selectedHeroes }: { selectedUnits: Unit[]; selectedHeroes: Hero[] }) {
   const insights: { text: string; type: "tip" | "warning" }[] = [];
-
   const hasPaladin      = selectedHeroes.some((h) => h.id === "paladin");
   const hasArchmage     = selectedHeroes.some((h) => h.id === "archmage");
   const hasMK           = selectedHeroes.some((h) => h.id === "mountain_king");
@@ -366,7 +291,6 @@ function CompositionInsights({ selectedUnits, selectedHeroes }: { selectedUnits:
   const hasGryphons     = selectedUnits.some((u) => u.id === "gryphon_rider");
   const hasSpellBreaker = selectedUnits.some((u) => u.id === "spell_breaker");
   const hasMortar       = selectedUnits.some((u) => u.id === "mortar_team");
-
   if (hasPaladin)      insights.push({ text: "Paladin Holy Light heals 400–600 HP — need burst to outpace. Hex shuts him down completely.", type: "warning" });
   if (hasArchmage)     insights.push({ text: "Brilliance Aura keeps all casters at full mana. Mass Teleport lets them escape — always have vision.", type: "warning" });
   if (hasMK)           insights.push({ text: "Storm Bolt stuns your hero 2–4s — spread heroes apart. Avatar = spell immune, don't waste Hex.", type: "warning" });
@@ -378,16 +302,11 @@ function CompositionInsights({ selectedUnits, selectedHeroes }: { selectedUnits:
   if (hasGryphons)     insights.push({ text: "Gryphon magic attack deals 200% vs your Heavy-armored Grunts/Taurens. Raider Ensnare grounds them immediately.", type: "warning" });
   if (hasSpellBreaker) insights.push({ text: "Spell Breakers drain mana and dispel Bloodlust on hit. Keep casters away from Spell Breakers.", type: "warning" });
   if (hasMortar)       insights.push({ text: "Mortar splash punishes clumped armies. Mortars are fragile in melee — rush them with Grunts.", type: "warning" });
-
   if (insights.length === 0) return null;
-
   return (
     <div className="mt-3 space-y-1.5">
       {insights.map((insight, i) => (
-        <div key={i} className={cn(
-          "flex items-start gap-2 rounded-xl px-3 py-2 text-xs",
-          insight.type === "warning" ? "bg-red-500/10 text-red-300/80" : "bg-emerald-500/10 text-emerald-300/80"
-        )}>
+        <div key={i} className={cn("flex items-start gap-2 rounded-xl px-3 py-2 text-xs", insight.type === "warning" ? "bg-red-500/10 text-red-300/80" : "bg-emerald-500/10 text-emerald-300/80")}>
           <span className="flex-shrink-0 mt-0.5">{insight.type === "warning" ? "⚠" : "→"}</span>
           {insight.text}
         </div>

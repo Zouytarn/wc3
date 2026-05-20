@@ -75,7 +75,7 @@ export function HeroCard({ score, rank }: HeroCardProps) {
 
           {/* Abilities */}
           <div>
-            <p className="label-section mb-2">Abilities</p>
+            <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">Abilities</p>
             <div className="space-y-2">
               {hero.abilities.map((ability) => (
                 <div key={ability.name} className="rounded-xl bg-white/[0.04] p-3">
@@ -101,7 +101,7 @@ export function HeroCard({ score, rank }: HeroCardProps) {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {strongPoints.length > 0 && (
               <div>
-                <p className="label-section mb-1.5">Strengths</p>
+                <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1.5">Strengths</p>
                 <ul className="space-y-1">
                   {strongPoints.map((pt) => (
                     <li key={pt} className="flex items-start gap-1.5 text-emerald-400/70">
@@ -114,7 +114,7 @@ export function HeroCard({ score, rank }: HeroCardProps) {
             )}
             {weakPoints.length > 0 && (
               <div>
-                <p className="label-section mb-1.5">Watch out for</p>
+                <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1.5">Watch out for</p>
                 <ul className="space-y-1">
                   {weakPoints.map((pt) => (
                     <li key={pt} className="flex items-start gap-1.5 text-red-400/70">
@@ -129,7 +129,7 @@ export function HeroCard({ score, rank }: HeroCardProps) {
 
           {hero.tips.length > 0 && (
             <div>
-              <p className="label-section mb-1.5">Tips</p>
+              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1.5">Tips</p>
               <ul className="space-y-1">
                 {hero.tips.map((tip) => (
                   <li key={tip} className="flex items-start gap-1.5 text-white/40">

@@ -33,10 +33,10 @@ export async function generateMetadata({ params }: { params: Promise<{ races: st
 }
 
 const RACE_HUE: Record<Race, string> = {
-  human:    "from-blue-500/[0.06]",
-  orc:      "from-red-500/[0.06]",
-  nightelf: "from-purple-500/[0.06]",
-  undead:   "from-slate-500/[0.04]",
+  human:    "from-blue-500/[0.07]",
+  orc:      "from-red-500/[0.07]",
+  nightelf: "from-purple-500/[0.07]",
+  undead:   "from-slate-500/[0.05]",
 };
 
 export default async function MatchupPage({ params }: { params: Promise<{ races: string }> }) {
@@ -56,22 +56,18 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
           <Link href="/" className="mb-4 inline-flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors">
             ← Race Select
           </Link>
-
           <div className="flex items-end gap-3 sm:gap-5 flex-wrap">
             <div>
-              <p className="label-section mb-1">Playing as</p>
+              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1">Playing as</p>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">{RACE_LABELS[myRace]}</h2>
             </div>
             <p className="text-2xl text-white/20 mb-1">vs</p>
             <div>
-              <p className="label-section mb-1">Facing</p>
+              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1">Facing</p>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-red-400">{RACE_LABELS[enemyRace]}</h2>
             </div>
           </div>
-
           <p className="mt-4 text-sm text-white/45 max-w-2xl leading-relaxed">{result.generalAnalysis}</p>
-
-          {/* Quick stats */}
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
               Top unit: {result.topUnits[0]?.name ?? "—"}
@@ -91,14 +87,14 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
       {/* Content */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 space-y-16">
 
-        {/* Unit + Hero Recommendations (with composition picker) */}
+        {/* Units + Heroes via CompositionAnalyzer */}
         <CompositionAnalyzer myRace={myRace} enemyRace={enemyRace} defaultResult={result} />
 
         {/* Build Order */}
         {buildOrder && (
           <section>
             <div className="flex items-center gap-3 mb-6">
-              <p className="label-section">Build Order</p>
+              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Build Order</p>
               <span className="text-white/20 text-xs">·</span>
               <span className="text-xs text-white/35">{RACE_LABELS[myRace]} vs {RACE_LABELS[enemyRace]}</span>
             </div>
@@ -106,10 +102,10 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
           </section>
         )}
 
-        {/* Damage Matrix */}
+        {/* Damage matrix */}
         <section>
           <div className="flex items-center gap-3 mb-4">
-            <p className="label-section">Damage vs Armor Matrix</p>
+            <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Damage vs Armor Matrix</p>
           </div>
           <p className="text-xs text-white/30 mb-4">Complete WC3 multiplier table. Hover a cell for details.</p>
           <DamageMatrix />
@@ -117,13 +113,13 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
 
         {/* Other matchups */}
         <section>
-          <p className="label-section mb-4">Other Matchups</p>
+          <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-4">Other Matchups</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {(["human", "orc", "nightelf", "undead"] as Race[]).filter((e) => e !== enemyRace).map((enemy) => (
               <Link
                 key={enemy}
                 href={`/matchup/${myRace}-vs-${enemy}`}
-                className="surface rounded-2xl p-4 text-center hover:bg-white/[0.07] transition-colors"
+                className="bg-white/[0.05] border border-white/[0.09] rounded-2xl p-4 text-center hover:bg-white/[0.08] transition-colors"
               >
                 <p className="text-xs text-white/30 mb-0.5">vs</p>
                 <p className="font-semibold text-sm text-white">{RACE_LABELS[enemy]}</p>

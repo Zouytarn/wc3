@@ -13,47 +13,37 @@ export default function HomePage() {
   const [enemyRace, setEnemyRace] = useState<Race | null>(null);
 
   function handleAnalyze() {
-    if (myRace && enemyRace) {
-      router.push(`/matchup/${myRace}-vs-${enemyRace}`);
-    }
+    if (myRace && enemyRace) router.push(`/matchup/${myRace}-vs-${enemyRace}`);
   }
 
   return (
     <div className="min-h-screen">
       {/* Hero */}
       <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-16 sm:pt-24 pb-12 text-center">
-        <p className="label-section mb-4">Warcraft III: Reforged</p>
+        <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-4">Warcraft III: Reforged</p>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
           Strategy Advisor
         </h1>
         <p className="mt-4 text-base text-white/50 max-w-xl mx-auto leading-relaxed">
-          Select your race and your opponent's race to get unit counter-picks,
-          hero picks, and a complete build order — driven by WC3's damage &amp; armor matrix.
+          Select your race and your opponent&apos;s race to get unit counter-picks,
+          hero picks, and a complete build order — driven by WC3&apos;s damage &amp; armor matrix.
         </p>
       </div>
 
       <div className="mx-auto max-w-5xl px-4 sm:px-6 pb-20 space-y-12">
-
         {/* Step 1 */}
         <section>
           <div className="flex items-center gap-3 mb-5">
-            <span className="label-section">Step 1</span>
+            <span className="text-[11px] font-medium tracking-widest uppercase text-white/40">Step 1</span>
             <span className="text-white/20 text-xs">·</span>
-            <span className="text-sm font-medium text-white/80">Your Race</span>
+            <span className="text-sm font-medium text-white/70">Your Race</span>
             {myRace && (
-              <span className="ml-auto text-xs text-amber-400/80 font-medium">
-                {RACE_LABELS[myRace]} selected
-              </span>
+              <span className="ml-auto text-xs text-amber-400/80 font-medium">{RACE_LABELS[myRace]} selected</span>
             )}
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {RACES.map((race) => (
-              <RaceCard
-                key={race}
-                race={race}
-                selected={myRace === race}
-                onClick={setMyRace}
-              />
+              <RaceCard key={race} race={race} selected={myRace === race} onClick={setMyRace} />
             ))}
           </div>
         </section>
@@ -61,26 +51,16 @@ export default function HomePage() {
         {/* Step 2 */}
         <section>
           <div className="flex items-center gap-3 mb-5">
-            <span className="label-section">Step 2</span>
+            <span className="text-[11px] font-medium tracking-widest uppercase text-white/40">Step 2</span>
             <span className="text-white/20 text-xs">·</span>
-            <span className={`text-sm font-medium ${myRace ? "text-white/80" : "text-white/25"}`}>
-              Enemy Race
-            </span>
+            <span className={`text-sm font-medium ${myRace ? "text-white/70" : "text-white/20"}`}>Enemy Race</span>
             {enemyRace && (
-              <span className="ml-auto text-xs text-red-400/80 font-medium">
-                {RACE_LABELS[enemyRace]} (enemy)
-              </span>
+              <span className="ml-auto text-xs text-red-400/80 font-medium">{RACE_LABELS[enemyRace]} (enemy)</span>
             )}
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {RACES.map((race) => (
-              <RaceCard
-                key={race}
-                race={race}
-                selected={enemyRace === race}
-                disabled={!myRace}
-                onClick={setEnemyRace}
-              />
+              <RaceCard key={race} race={race} selected={enemyRace === race} disabled={!myRace} onClick={setEnemyRace} />
             ))}
           </div>
         </section>
@@ -108,10 +88,10 @@ export default function HomePage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 pt-4">
           {[
             { title: "Damage Matrix", desc: "Every matchup scored using the full WC3 attack vs armor multiplier table." },
-            { title: "Counter-Picks", desc: "See which units deal bonus damage to your opponent's specific army comp." },
-            { title: "Build Orders", desc: "Step-by-step timings for all 16 race matchup combinations." },
+            { title: "Counter-Picks",  desc: "See which units deal bonus damage to your opponent's specific army comp." },
+            { title: "Build Orders",   desc: "Step-by-step timings for all 16 race matchup combinations." },
           ].map((card) => (
-            <div key={card.title} className="surface rounded-2xl p-5">
+            <div key={card.title} className="bg-white/[0.05] border border-white/[0.09] rounded-2xl p-5">
               <p className="font-semibold text-sm text-white/80 mb-1.5">{card.title}</p>
               <p className="text-xs text-white/40 leading-relaxed">{card.desc}</p>
             </div>

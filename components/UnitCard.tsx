@@ -92,7 +92,7 @@ export function UnitCard({ score, rank }: UnitCardProps) {
 
           {unit.special.length > 0 && (
             <div>
-              <p className="label-section mb-2">Abilities</p>
+              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">Abilities</p>
               <ul className="space-y-1">
                 {unit.special.map((s) => (
                   <li key={s} className="flex items-start gap-2 text-white/50">
@@ -105,7 +105,7 @@ export function UnitCard({ score, rank }: UnitCardProps) {
           )}
 
           <div>
-            <p className="label-section mb-2">Effectiveness vs Enemy</p>
+            <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">Effectiveness vs Enemy</p>
             <div className="grid grid-cols-2 gap-1">
               {effectivenessVsEnemyUnits.map(({ enemyUnit, multiplier }) => (
                 <div key={enemyUnit.id} className="flex items-center justify-between rounded-lg bg-white/[0.04] px-2.5 py-1.5">
@@ -124,7 +124,7 @@ export function UnitCard({ score, rank }: UnitCardProps) {
 
           <div className="grid grid-cols-2 gap-4 pt-1">
             <div>
-              <p className="label-section mb-1.5">Stats</p>
+              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1.5">Stats</p>
               <div className="space-y-0.5 text-white/40">
                 <div>HP <span className="text-white/60">{unit.hp}</span></div>
                 <div>Dmg <span className="text-white/60">{unit.damage}</span></div>
@@ -134,7 +134,7 @@ export function UnitCard({ score, rank }: UnitCardProps) {
             </div>
             {unit.description && (
               <div>
-                <p className="label-section mb-1.5">Overview</p>
+                <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1.5">Overview</p>
                 <p className="text-white/40 leading-relaxed">{unit.description}</p>
               </div>
             )}
