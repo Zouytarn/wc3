@@ -59,25 +59,25 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
           <div className="flex items-end gap-3 sm:gap-5 flex-wrap">
             <div>
               <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1">Playing as</p>
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">{RACE_LABELS[myRace]}</h2>
+              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-white">{RACE_LABELS[myRace]}</h2>
             </div>
-            <p className="text-2xl text-white/20 mb-1">vs</p>
+            <p className="text-xl sm:text-2xl text-white/20 mb-1">vs</p>
             <div>
               <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1">Facing</p>
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-red-400">{RACE_LABELS[enemyRace]}</h2>
+              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-red-400">{RACE_LABELS[enemyRace]}</h2>
             </div>
           </div>
-          <p className="mt-4 text-sm text-white/45 max-w-2xl leading-relaxed">{result.generalAnalysis}</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
+          <p className="mt-3 text-sm text-white/45 max-w-2xl leading-relaxed hidden sm:block">{result.generalAnalysis}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-400">
               Top unit: {result.topUnits[0]?.name ?? "—"}
             </span>
-            <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-xs text-amber-400">
-              Primary hero: {result.topHeroes[0]?.name ?? "—"}
+            <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-400">
+              Hero: {result.topHeroes[0]?.name ?? "—"}
             </span>
             {result.keyThreats[0] && (
-              <span className="rounded-full border border-red-500/25 bg-red-500/10 px-3 py-1 text-xs text-red-400">
-                Watch: {result.keyThreats[0]}
+              <span className="rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-xs text-red-400 truncate max-w-[calc(100vw-3rem)]">
+                ⚠ {result.keyThreats[0].split("(")[0].trim()}
               </span>
             )}
           </div>
@@ -85,7 +85,7 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
       </div>
 
       {/* Content */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 space-y-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-12 space-y-10 sm:space-y-16">
 
         {/* Units + Heroes via CompositionAnalyzer */}
         <CompositionAnalyzer myRace={myRace} enemyRace={enemyRace} defaultResult={result} />

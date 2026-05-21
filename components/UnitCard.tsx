@@ -62,11 +62,11 @@ export function UnitCard({ score, expanded, onToggle }: UnitCardProps) {
 
         <div className="mt-3 space-y-1.5">
           {[
-            { label: "Offense", val: offensiveScore, color: "bg-emerald-500" },
-            { label: "Defense", val: defensiveScore, color: "bg-blue-500" },
-          ].map(({ label, val, color }) => (
+            { label: "Offense", val: offensiveScore, color: "bg-emerald-500", textColor: "text-emerald-500" },
+            { label: "Defense", val: defensiveScore, color: "bg-blue-500", textColor: "text-blue-500" },
+          ].map(({ label, val, color, textColor }) => (
             <div key={label} className="flex items-center gap-2">
-              <span className="w-12 text-[11px] text-white/30">{label}</span>
+              <span className={`w-10 sm:w-12 text-[11px] ${textColor}`}>{label}</span>
               <div className="flex-1 h-1 rounded-full bg-white/[0.08]">
                 <div className={cn("h-full rounded-full transition-all", color)} style={{ width: `${Math.min(val * 70, 100)}%` }} />
               </div>
@@ -77,8 +77,8 @@ export function UnitCard({ score, expanded, onToggle }: UnitCardProps) {
       </button>
 
       {expanded && (
-        <div className="border-t border-white/[0.06] px-4 pb-4 pt-3 text-xs space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="border-t border-white/[0.06] px-3 sm:px-4 pb-4 pt-3 text-xs space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {/* Left col: Explanation + Abilities + Stats + Overview */}
             <div className="space-y-4">
               <p className="text-white/60 leading-relaxed">{explanation}</p>
@@ -98,9 +98,9 @@ export function UnitCard({ score, expanded, onToggle }: UnitCardProps) {
               <div>
                 <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1.5">Stats</p>
                 <div className="space-y-0.5 text-white/40">
-                  <div>HP <span className="text-white/60">{unit.hp}</span></div>
-                  <div>Dmg <span className="text-white/60">{unit.damage}</span></div>
-                  <div>Food <span className="text-white/60">{unit.foodCost}</span></div>
+                  <div>HP <span className="text-emerald-400">{unit.hp}</span></div>
+                  <div>Dmg <span className="text-red-400">{unit.damage}</span></div>
+                  <div>Food <span className="text-amber-400">{unit.foodCost}</span></div>
                   <div>Speed <span className="text-white/60">{unit.speed}</span></div>
                 </div>
               </div>
@@ -116,7 +116,9 @@ export function UnitCard({ score, expanded, onToggle }: UnitCardProps) {
             <div>
               <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-2">Effectiveness vs Enemy</p>
               <div className="flex flex-col gap-1">
-                {effectivenessVsEnemyUnits.map(({ enemyUnit, multiplier }) => (
+                {[...effectivenessVsEnemyUnits]
+                  .sort((a, b) => b.multiplier - a.multiplier)
+                  .map(({ enemyUnit, multiplier }) => (
                   <div key={enemyUnit.id} className="flex items-center justify-between rounded-lg bg-white/[0.04] px-2 py-1.5 gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <div className="relative flex-shrink-0 h-6 w-6 overflow-hidden">

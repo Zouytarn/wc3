@@ -11,6 +11,7 @@ import { DAMAGE_MATRIX, getEffectivenessLabel } from "@/data/damage-matrix";
 import { getBuildOrder } from "@/data/build-orders";
 import { UnitCard } from "@/components/UnitCard";
 import { HeroCard } from "@/components/HeroCard";
+import { MatchupMatrixModal } from "@/components/MatchupMatrixModal";
 import { cn } from "@/lib/utils";
 
 function scoreUnitVsComposition(unit: Unit, enemyUnits: Unit[], enemyHeroes: Hero[]): UnitMatchupScore {
@@ -107,6 +108,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
   const [expandedUnitId, setExpandedUnitId] = useState<string | null>(null);
   const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(new Set());
   const [selectedHeroIds, setSelectedHeroIds] = useState<Set<string>>(new Set());
+  const [showMatrix, setShowMatrix] = useState(false);
   const buildOrder = getBuildOrder(myRace, enemyRace);
   const heroFirstId = buildOrder?.heroFirst;
   const toggleUnit = (id: string) => setSelectedUnitIds((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -243,6 +245,13 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
         <div className="flex items-center gap-3 mb-5">
           <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Unit Recommendations</p>
           {isCustomMode && <span className="rounded-full bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 text-[10px] text-amber-400">Custom</span>}
+          <button
+            onClick={() => setShowMatrix(true)}
+            className="ml-auto rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/40 hover:text-white/70 hover:border-white/[0.18] transition-colors flex items-center gap-1.5 flex-shrink-0"
+          >
+            <span>⬡</span>
+            <span className="hidden sm:inline">Matchup </span>Matrix
+          </button>
         </div>
         {!isCustomMode && (
           <p className="mb-4 text-xs text-white/35">
@@ -285,6 +294,20 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
           {activeHeroScores.map((score) => <HeroCard key={score.hero.id} score={score} />)}
         </div>
       </section>
+
+      {/* Matchup Matrix modal */}
+      {showMatrix && (
+        <MatchupMatrixModal
+          enemyUnits={
+            hasSelection
+              ? allEnemyUnits.filter((u) => selectedUnitIds.has(u.id))
+              : allEnemyUnits
+          }
+          myUnitScores={activeUnitScores}
+          isCustomMode={isCustomMode}
+          onClose={() => setShowMatrix(false)}
+        />
+      )}
     </div>
   );
 }
