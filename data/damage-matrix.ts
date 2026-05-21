@@ -18,7 +18,7 @@ export type ArmorType =
 // Damage multiplier matrix: attackType → armorType → multiplier
 // Source: Warcraft III: Reforged game data
 export const DAMAGE_MATRIX: Record<AttackType, Record<ArmorType, number>> = {
-  piercing:  { unarmored: 1.50, light: 2.00, medium: 0.75, heavy: 1.00, fortified: 0.35, hero: 0.50 },
+  piercing:  { unarmored: 1.50, light: 2.00, medium: 0.75, heavy: 0.90, fortified: 0.35, hero: 0.50 },
   normal:    { unarmored: 1.00, light: 1.00, medium: 1.50, heavy: 1.00, fortified: 0.70, hero: 1.00 },
   siege:     { unarmored: 1.50, light: 1.00, medium: 0.50, heavy: 1.00, fortified: 1.50, hero: 0.50 },
   magic:     { unarmored: 1.00, light: 1.25, medium: 0.75, heavy: 2.00, fortified: 0.35, hero: 0.50 },

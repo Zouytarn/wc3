@@ -22,25 +22,36 @@ interface RaceCardProps {
 export function RaceCard({ race, selected, disabled, onClick }: RaceCardProps) {
   const accent = RACE_ACCENT[race];
   return (
-    <button
-      onClick={() => !disabled && onClick(race)}
-      disabled={disabled}
-      className={cn(
-        "relative w-full rounded-2xl p-4 text-left transition-all duration-200",
-        "bg-white/[0.05] border border-white/[0.09]",
-        !disabled && "hover:bg-white/[0.08] active:scale-[0.98] cursor-pointer",
-        selected && `ring-2 ${accent.ring}`,
-        disabled && "opacity-30 cursor-not-allowed"
+    <div className="relative group">
+      <button
+        onClick={() => !disabled && onClick(race)}
+        disabled={disabled}
+        className={cn(
+          "relative w-full rounded-2xl p-4 text-center transition-all duration-200",
+          "bg-white/[0.05] border border-white/[0.09]",
+          !disabled && "hover:bg-white/[0.08] active:scale-[0.98] cursor-pointer",
+          selected && `ring-2 ${accent.ring}`,
+          disabled && "opacity-30 cursor-not-allowed"
+        )}
+      >
+        {selected && (
+          <div className={cn("absolute top-3 right-3 h-2 w-2 rounded-full", accent.dot)} />
+        )}
+        <div className="mb-2 relative h-20 w-20 overflow-hidden mx-auto">
+          <Image src={RACE_ICONS[race]} alt={RACE_LABELS[race]} fill className="object-cover" unoptimized />
+        </div>
+        <p className="font-semibold text-sm text-white leading-tight">{RACE_LABELS[race]}</p>
+      </button>
+
+      {/* Hover tooltip */}
+      {!disabled && (
+        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-56 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          <div className="bg-[#13131f] border border-white/[0.12] rounded-xl px-3 py-2.5 shadow-xl">
+            <p className="text-[11px] text-white/60 leading-relaxed">{RACE_DESCRIPTIONS[race]}</p>
+          </div>
+          <div className="mx-auto w-2 h-2 bg-[#13131f] border-r border-b border-white/[0.12] rotate-45 -mt-1 translate-x-[calc(50%-4px)]" />
+        </div>
       )}
-    >
-      {selected && (
-        <div className={cn("absolute top-3 right-3 h-2 w-2 rounded-full", accent.dot)} />
-      )}
-      <div className="mb-3 relative h-12 w-12 overflow-hidden rounded-xl border border-white/10">
-        <Image src={RACE_ICONS[race]} alt={RACE_LABELS[race]} fill className="object-cover" unoptimized />
-      </div>
-      <p className="font-semibold text-sm text-white leading-tight mb-1">{RACE_LABELS[race]}</p>
-      <p className="text-[11px] text-white/40 leading-relaxed line-clamp-3">{RACE_DESCRIPTIONS[race]}</p>
-    </button>
+    </div>
   );
 }

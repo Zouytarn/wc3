@@ -91,10 +91,10 @@ export function getHeroIcon(id: string): string {
   return HERO_ICONS[id] ?? "/icons/BTNHeroPaladin.png";
 }
 
-// Race portrait icons — use iconic hero portraits as race emblems
+// Race faction icons — official Reforged faction art
 export const RACE_ICONS: Record<string, string> = {
-  human:    BASE + "BTNHeroPaladin.png",
-  orc:      BASE + "BTNHeroBlademaster.png",
-  nightelf: BASE + "BTNHeroDemonHunter.png",
-  undead:   BASE + "BTNHeroDeathKnight.png",
+  human:    "/race-icons/Warcraft_III_Reforged_-_Humans_Icon.png",
+  orc:      "/race-icons/Warcraft_III_Reforged_-_Orcs_Icon.png",
+  nightelf: "/race-icons/Warcraft_III_Reforged_-_Night_Elves_Icon.png",
+  undead:   "/race-icons/Warcraft_III_Reforged_-_Undead_Icon.png",
 };

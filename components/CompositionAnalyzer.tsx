@@ -86,7 +86,7 @@ function ToggleChip({ label, sub, iconSrc, active, onClick }: { label: string; s
         active ? "border-amber-500/40 bg-amber-500/10 text-white" : "border-white/[0.07] bg-white/[0.03] text-white/40 hover:border-white/[0.15] hover:text-white/60"
       )}
     >
-      <div className={cn("relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg border", active ? "border-amber-500/40" : "border-white/[0.08]")}>
+      <div className={cn("relative h-8 w-8 flex-shrink-0 overflow-hidden border", active ? "border-amber-500/40" : "border-white/[0.08]")}>
         <Image src={iconSrc} alt={label} fill className="object-cover" unoptimized />
       </div>
       <div className="min-w-0">
@@ -104,9 +104,9 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
   const allEnemyHeroes = HEROES_BY_RACE[enemyRace];
   const myUnits = UNITS_BY_RACE[myRace];
   const myHeroes = HEROES_BY_RACE[myRace];
+  const [expandedUnitId, setExpandedUnitId] = useState<string | null>(null);
   const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(new Set());
   const [selectedHeroIds, setSelectedHeroIds] = useState<Set<string>>(new Set());
-  const [compositionMode, setCompositionMode] = useState(false);
   const buildOrder = getBuildOrder(myRace, enemyRace);
   const heroFirstId = buildOrder?.heroFirst;
   const toggleUnit = (id: string) => setSelectedUnitIds((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -114,32 +114,56 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
   const hasSelection = selectedUnitIds.size > 0 || selectedHeroIds.size > 0;
 
   const customResult = useMemo(() => {
-    if (!compositionMode || !hasSelection) return null;
+    if (!hasSelection) return null;
     const su = allEnemyUnits.filter((u) => selectedUnitIds.has(u.id));
     const sh = allEnemyHeroes.filter((h) => selectedHeroIds.has(h.id));
     return {
       unitScores: myUnits.map((u) => scoreUnitVsComposition(u, su, sh)).sort((a, b) => b.overallScore - a.overallScore),
       heroScores: myHeroes.map((h) => scoreHeroVsComposition(h, enemyRace, su, sh, h.id === heroFirstId)).sort((a, b) => b.relevanceScore - a.relevanceScore),
     };
-  }, [compositionMode, selectedUnitIds, selectedHeroIds, allEnemyUnits, allEnemyHeroes, myUnits, myHeroes, enemyRace, heroFirstId]);
+  }, [selectedUnitIds, selectedHeroIds, allEnemyUnits, allEnemyHeroes, myUnits, myHeroes, enemyRace, heroFirstId]);
 
-  const activeUnitScores = (compositionMode && customResult) ? customResult.unitScores : defaultResult.unitScores;
-  const activeHeroScores = (compositionMode && customResult) ? customResult.heroScores : defaultResult.heroScores;
-  const isCustomMode = compositionMode && hasSelection;
+  const activeUnitScores = (hasSelection && customResult) ? customResult.unitScores : defaultResult.unitScores;
+  const activeHeroScores = (hasSelection && customResult) ? customResult.heroScores : defaultResult.heroScores;
+  const isCustomMode = hasSelection;
   const unitsByTier: Record<number, Unit[]> = { 1: [], 2: [], 3: [] };
   allEnemyUnits.forEach((u) => { if (u.tier in unitsByTier) unitsByTier[u.tier].push(u); });
   const recommended = activeUnitScores.filter((s) => s.recommendation === "highly_recommended" || s.recommendation === "recommended");
   const situational  = activeUnitScores.filter((s) => s.recommendation === "situational");
   const avoid        = activeUnitScores.filter((s) => s.recommendation === "avoid");
 
+  // If the expanded card is at an odd index (col 2), swap it with its left neighbor
+  // so col-span-2 always starts from column 1, preventing layout gaps.
+  function reorderForExpand(scores: typeof recommended) {
+    if (!expandedUnitId) return scores;
+    const idx = scores.findIndex((s) => s.unit.id === expandedUnitId);
+    if (idx <= 0 || idx % 2 === 0) return scores;
+    const result = [...scores];
+    [result[idx - 1], result[idx]] = [result[idx], result[idx - 1]];
+    return result;
+  }
+
+  function renderUnitGrid(scores: typeof recommended, className?: string) {
+    const ordered = reorderForExpand(scores);
+    return (
+      <div className={cn("grid grid-cols-2 gap-2.5 items-start", className)}>
+        {ordered.map((score) => (
+          <UnitCard
+            key={score.unit.id}
+            score={score}
+            expanded={expandedUnitId === score.unit.id}
+            onToggle={() => setExpandedUnitId(expandedUnitId === score.unit.id ? null : score.unit.id)}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-10">
-      {/* Composition picker */}
+      {/* Composition picker — always visible */}
       <div className="bg-white/[0.05] border border-white/[0.09] rounded-2xl overflow-hidden">
-        <button
-          onClick={() => setCompositionMode(!compositionMode)}
-          className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.03] transition-colors"
-        >
+        <div className="px-5 py-4 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <p className="font-semibold text-sm text-white">Enemy Composition</p>
@@ -150,48 +174,43 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
               )}
             </div>
             <p className="text-[11px] text-white/35 mt-0.5">
-              {compositionMode ? "Select what the enemy is running for tailored counter-picks" : "Specify the enemy's exact composition for precise results"}
+              Select what the enemy is running for tailored counter-picks
             </p>
           </div>
-          <span className={cn("text-white/30 text-xs transition-transform duration-200 flex-shrink-0 ml-4", compositionMode && "rotate-180")}>▼</span>
-        </button>
+          {hasSelection && (
+            <button onClick={() => { setSelectedUnitIds(new Set()); setSelectedHeroIds(new Set()); }} className="rounded-xl border border-white/[0.08] px-3 py-1.5 text-xs text-white/40 hover:text-white/70 hover:border-white/[0.18] transition-colors flex-shrink-0 ml-4">
+              Clear all
+            </button>
+          )}
+        </div>
 
-        {compositionMode && (
-          <div className="border-t border-white/[0.06] px-4 sm:px-5 pb-5 pt-4 space-y-5">
-            <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Enemy Heroes</p>
-                {selectedHeroIds.size > 0 && <button onClick={() => setSelectedHeroIds(new Set())} className="text-[11px] text-white/25 hover:text-white/60">clear</button>}
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {allEnemyHeroes.map((h) => <ToggleChip key={h.id} label={h.name} sub={`${h.primaryStat} · ${h.range}`} iconSrc={getHeroIcon(h.id)} active={selectedHeroIds.has(h.id)} onClick={() => toggleHero(h.id)} />)}
-              </div>
+        <div className="border-t border-white/[0.06] px-4 sm:px-5 pb-5 pt-4 space-y-5">
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Enemy Heroes</p>
+              {selectedHeroIds.size > 0 && <button onClick={() => setSelectedHeroIds(new Set())} className="text-[11px] text-white/25 hover:text-white/60">clear</button>}
             </div>
-            {[1, 2, 3].map((tier) => (
-              <div key={tier}>
-                <div className="flex items-center justify-between mb-2.5">
-                  <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Tier {tier} Units</p>
-                  {unitsByTier[tier].some((u) => selectedUnitIds.has(u.id)) && (
-                    <button onClick={() => setSelectedUnitIds((p) => { const n = new Set(p); unitsByTier[tier].forEach((u) => n.delete(u.id)); return n; })} className="text-[11px] text-white/25 hover:text-white/60">clear tier {tier}</button>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                  {unitsByTier[tier].map((u) => <ToggleChip key={u.id} label={u.name} sub={`${ATTACK_TYPE_LABELS[u.attackType]} / ${ARMOR_TYPE_LABELS[u.armorType]}`} iconSrc={getUnitIcon(u.id)} active={selectedUnitIds.has(u.id)} onClick={() => toggleUnit(u.id)} />)}
-                </div>
-              </div>
-            ))}
-            <div className="flex items-center gap-3 pt-1">
-              {hasSelection && (
-                <button onClick={() => { setSelectedUnitIds(new Set()); setSelectedHeroIds(new Set()); }} className="rounded-xl border border-white/[0.08] px-4 py-2 text-xs text-white/40 hover:text-white/70 hover:border-white/[0.18] transition-colors">
-                  Clear all
-                </button>
-              )}
-              <p className="text-[11px] text-white/25">
-                {hasSelection ? `Showing results vs ${selectedUnitIds.size + selectedHeroIds.size} selected` : "Select units/heroes above for precise counter-picks"}
-              </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {allEnemyHeroes.map((h) => <ToggleChip key={h.id} label={h.name} sub={`${h.primaryStat} · ${h.range}`} iconSrc={getHeroIcon(h.id)} active={selectedHeroIds.has(h.id)} onClick={() => toggleHero(h.id)} />)}
             </div>
           </div>
-        )}
+          {[1, 2, 3].map((tier) => (
+            <div key={tier}>
+              <div className="flex items-center justify-between mb-2.5">
+                <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Tier {tier} Units</p>
+                {unitsByTier[tier].some((u) => selectedUnitIds.has(u.id)) && (
+                  <button onClick={() => setSelectedUnitIds((p) => { const n = new Set(p); unitsByTier[tier].forEach((u) => n.delete(u.id)); return n; })} className="text-[11px] text-white/25 hover:text-white/60">clear tier {tier}</button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                {unitsByTier[tier].map((u) => <ToggleChip key={u.id} label={u.name} sub={`${ATTACK_TYPE_LABELS[u.attackType]} / ${ARMOR_TYPE_LABELS[u.armorType]}`} iconSrc={getUnitIcon(u.id)} active={selectedUnitIds.has(u.id)} onClick={() => toggleUnit(u.id)} />)}
+              </div>
+            </div>
+          ))}
+          {!hasSelection && (
+            <p className="text-[11px] text-white/25 pt-1">Select units/heroes above for precise counter-picks</p>
+          )}
+        </div>
       </div>
 
       {/* Active composition strip */}
@@ -227,17 +246,13 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
         </div>
         {!isCustomMode && (
           <p className="mb-4 text-xs text-white/35">
-            Ranked vs all {RACE_LABELS[enemyRace]} units. Use{" "}
-            <button onClick={() => setCompositionMode(true)} className="text-amber-400/70 hover:text-amber-400 underline underline-offset-2">Enemy Composition</button>{" "}
-            above for precise results.
+            Ranked vs all {RACE_LABELS[enemyRace]} units. Select specific units above for precise results.
           </p>
         )}
         {recommended.length > 0 && (
           <div className="mb-5">
             <p className="text-xs font-medium text-emerald-400/80 mb-3">Recommended ({recommended.length})</p>
-            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-              {recommended.map((score, idx) => <UnitCard key={score.unit.id} score={score} rank={idx + 1} />)}
-            </div>
+            {renderUnitGrid(recommended)}
           </div>
         )}
         {situational.length > 0 && (
@@ -246,9 +261,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
               <span className="group-open:rotate-90 transition-transform text-white/20">▶</span>
               Situational ({situational.length})
             </summary>
-            <div className="mt-3 grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-              {situational.map((score) => <UnitCard key={score.unit.id} score={score} />)}
-            </div>
+            {renderUnitGrid(situational, "mt-3")}
           </details>
         )}
         {avoid.length > 0 && (
@@ -257,9 +270,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
               <span className="group-open:rotate-90 transition-transform text-white/20">▶</span>
               Avoid ({avoid.length})
             </summary>
-            <div className="mt-3 grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-              {avoid.map((score) => <UnitCard key={score.unit.id} score={score} />)}
-            </div>
+            {renderUnitGrid(avoid, "mt-3")}
           </details>
         )}
       </section>
@@ -271,7 +282,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
           {isCustomMode && <span className="rounded-full bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 text-[10px] text-amber-400">Custom</span>}
         </div>
         <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-          {activeHeroScores.map((score, idx) => <HeroCard key={score.hero.id} score={score} rank={idx + 1} />)}
+          {activeHeroScores.map((score) => <HeroCard key={score.hero.id} score={score} />)}
         </div>
       </section>
     </div>

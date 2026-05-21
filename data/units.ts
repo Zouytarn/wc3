@@ -528,7 +528,7 @@ const NIGHTELF_UNITS: Unit[] = [
     goldCost: 130,
     lumberCost: 10,
     foodCost: 2,
-    hp: 245,
+    hp: 275,
     damage: "17",
     dps: 15,
     speed: "fast",

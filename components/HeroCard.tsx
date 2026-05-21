@@ -16,10 +16,9 @@ const REC_STYLES: Record<HeroMatchupScore["recommendation"], { border: string; b
 
 interface HeroCardProps {
   score: HeroMatchupScore;
-  rank?: number;
 }
 
-export function HeroCard({ score, rank }: HeroCardProps) {
+export function HeroCard({ score }: HeroCardProps) {
   const [expanded, setExpanded] = useState(false);
   const { hero, strongPoints, weakPoints, recommendation } = score;
   const style = REC_STYLES[recommendation];
@@ -29,13 +28,8 @@ export function HeroCard({ score, rank }: HeroCardProps) {
       <button onClick={() => setExpanded(!expanded)} className="w-full p-4 text-left">
         <div className="flex items-start gap-3">
           {/* Hero icon */}
-          <div className="relative flex-shrink-0 h-14 w-14 overflow-hidden rounded-xl border border-white/10">
+          <div className="relative flex-shrink-0 h-14 w-14 overflow-hidden border border-white/10">
             <Image src={getHeroIcon(hero.id)} alt={hero.name} fill className="object-cover" unoptimized />
-            {rank && (
-              <div className="absolute -top-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-black">
-                {rank}
-              </div>
-            )}
           </div>
 
           <div className="flex-1 min-w-0">
