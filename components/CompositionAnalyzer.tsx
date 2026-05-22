@@ -149,7 +149,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
   function renderUnitGrid(scores: typeof recommended, className?: string) {
     const ordered = reorderForExpand(scores);
     return (
-      <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start", className)}>
+      <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-2.5 items-start", className)}>
         {ordered.map((score) => (
           <UnitCard
             key={score.unit.id}
@@ -174,7 +174,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
   function renderHeroGrid(scores: typeof activeHeroScores) {
     const ordered = reorderHeroForExpand(scores);
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 items-start">
         {ordered.map((score) => (
           <HeroCard
             key={score.hero.id}

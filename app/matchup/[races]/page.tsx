@@ -67,7 +67,7 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
               <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-red-400">{RACE_LABELS[enemyRace]}</h2>
             </div>
           </div>
-          <p className="mt-3 text-sm text-white/45 max-w-2xl leading-relaxed hidden sm:block">{result.generalAnalysis}</p>
+          <p className="mt-3 text-sm text-white/45 max-w-2xl leading-relaxed hidden md:block">{result.generalAnalysis}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-400">
               Top unit: {result.topUnits[0]?.name ?? "—"}

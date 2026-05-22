@@ -116,7 +116,7 @@ export function MatchupMatrixModal({ enemyUnits, myUnitScores, isCustomMode, onC
       onClick={onClose}
     >
       <div
-        className="relative bg-[#0d0d11] border border-white/[0.09] rounded-2xl p-4 sm:p-6 w-full sm:w-fit max-w-[96vw] sm:max-w-[92vw] max-h-[90vh] overflow-auto"
+        className="relative bg-[#0d0d11] border border-white/[0.09] rounded-2xl p-4 md:p-6 w-full md:w-fit max-w-[96vw] md:max-w-[92vw] max-h-[90vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -161,7 +161,7 @@ export function MatchupMatrixModal({ enemyUnits, myUnitScores, isCustomMode, onC
         {hasData && (
           <>
             {/* ── MOBILE: compact grid table ── */}
-            <div className="block sm:hidden">
+            <div className="block md:hidden">
               <div className="overflow-x-auto">
                 <table className="border-separate border-spacing-1">
                   <thead>
@@ -235,7 +235,7 @@ export function MatchupMatrixModal({ enemyUnits, myUnitScores, isCustomMode, onC
             </div>
 
             {/* ── DESKTOP: SVG diagram ── */}
-            <div className="hidden sm:flex items-start" style={{ width: "fit-content" }}>
+            <div className="hidden md:flex items-start" style={{ width: "fit-content" }}>
               {/* Left column: my recommended units */}
               <div className="flex-shrink-0">
                 <p className="text-[11px] font-medium tracking-widest uppercase text-white/25 mb-2 text-right pr-3">

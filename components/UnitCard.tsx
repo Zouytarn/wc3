@@ -25,7 +25,7 @@ export function UnitCard({ score, expanded, onToggle }: UnitCardProps) {
   }[recommendation];
 
   return (
-    <div className={cn("rounded-2xl border bg-white/[0.03] transition-all duration-150", borderColor, expanded && "col-span-2")}>
+    <div className={cn("rounded-2xl border bg-white/[0.03] transition-all duration-150", borderColor, expanded && "md:col-span-2")}>
       <button onClick={onToggle} className="w-full p-4 text-left">
         <div className="flex items-center gap-3">
           <div className="relative flex-shrink-0 h-10 w-10 overflow-hidden border border-white/10">
@@ -78,7 +78,7 @@ export function UnitCard({ score, expanded, onToggle }: UnitCardProps) {
 
       {expanded && (
         <div className="border-t border-white/[0.06] px-3 sm:px-4 pb-4 pt-3 text-xs space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Left col: Explanation + Abilities + Stats + Overview */}
             <div className="space-y-4">
               <p className="text-white/60 leading-relaxed">{explanation}</p>

@@ -24,7 +24,7 @@ export function HeroCard({ score, expanded, onToggle }: HeroCardProps) {
   const style = REC_STYLES[recommendation];
 
   return (
-    <div className={cn("rounded-2xl border bg-white/[0.03] transition-all duration-150", style.border, expanded && "col-span-2")}>
+    <div className={cn("rounded-2xl border bg-white/[0.03] transition-all duration-150", style.border, expanded && "md:col-span-2")}>
       <button onClick={onToggle} className="w-full p-4 text-left">
         <div className="flex items-start gap-3">
           {/* Hero icon */}
@@ -92,7 +92,7 @@ export function HeroCard({ score, expanded, onToggle }: HeroCardProps) {
           </div>
 
           {/* Strengths & Weaknesses */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {strongPoints.length > 0 && (
               <div>
                 <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1.5">Strengths</p>
