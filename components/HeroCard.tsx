@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import type { HeroMatchupScore } from "@/lib/matchup-engine";
 import { HERO_ROLE_LABELS } from "@/data/heroes";
@@ -16,16 +15,17 @@ const REC_STYLES: Record<HeroMatchupScore["recommendation"], { border: string; b
 
 interface HeroCardProps {
   score: HeroMatchupScore;
+  expanded: boolean;
+  onToggle: () => void;
 }
 
-export function HeroCard({ score }: HeroCardProps) {
-  const [expanded, setExpanded] = useState(false);
+export function HeroCard({ score, expanded, onToggle }: HeroCardProps) {
   const { hero, strongPoints, weakPoints, recommendation } = score;
   const style = REC_STYLES[recommendation];
 
   return (
-    <div className={cn("rounded-2xl border bg-white/[0.03] transition-all duration-150", style.border)}>
-      <button onClick={() => setExpanded(!expanded)} className="w-full p-4 text-left">
+    <div className={cn("rounded-2xl border bg-white/[0.03] transition-all duration-150", style.border, expanded && "col-span-2")}>
+      <button onClick={onToggle} className="w-full p-4 text-left">
         <div className="flex items-start gap-3">
           {/* Hero icon */}
           <div className="relative flex-shrink-0 h-14 w-14 overflow-hidden border border-white/10">

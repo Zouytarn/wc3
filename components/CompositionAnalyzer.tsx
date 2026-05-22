@@ -106,6 +106,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
   const myUnits = UNITS_BY_RACE[myRace];
   const myHeroes = HEROES_BY_RACE[myRace];
   const [expandedUnitId, setExpandedUnitId] = useState<string | null>(null);
+  const [expandedHeroId, setExpandedHeroId] = useState<string | null>(null);
   const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(new Set());
   const [selectedHeroIds, setSelectedHeroIds] = useState<Set<string>>(new Set());
   const [showMatrix, setShowMatrix] = useState(false);
@@ -148,13 +149,38 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
   function renderUnitGrid(scores: typeof recommended, className?: string) {
     const ordered = reorderForExpand(scores);
     return (
-      <div className={cn("grid grid-cols-2 gap-2.5 items-start", className)}>
+      <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start", className)}>
         {ordered.map((score) => (
           <UnitCard
             key={score.unit.id}
             score={score}
             expanded={expandedUnitId === score.unit.id}
             onToggle={() => setExpandedUnitId(expandedUnitId === score.unit.id ? null : score.unit.id)}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  function reorderHeroForExpand(scores: typeof activeHeroScores) {
+    if (!expandedHeroId) return scores;
+    const idx = scores.findIndex((s) => s.hero.id === expandedHeroId);
+    if (idx <= 0 || idx % 2 === 0) return scores;
+    const result = [...scores];
+    [result[idx - 1], result[idx]] = [result[idx], result[idx - 1]];
+    return result;
+  }
+
+  function renderHeroGrid(scores: typeof activeHeroScores) {
+    const ordered = reorderHeroForExpand(scores);
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start">
+        {ordered.map((score) => (
+          <HeroCard
+            key={score.hero.id}
+            score={score}
+            expanded={expandedHeroId === score.hero.id}
+            onToggle={() => setExpandedHeroId(expandedHeroId === score.hero.id ? null : score.hero.id)}
           />
         ))}
       </div>
@@ -290,9 +316,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
           <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Hero Recommendations</p>
           {isCustomMode && <span className="rounded-full bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 text-[10px] text-amber-400">Custom</span>}
         </div>
-        <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-          {activeHeroScores.map((score) => <HeroCard key={score.hero.id} score={score} />)}
-        </div>
+        {renderHeroGrid(activeHeroScores)}
       </section>
 
       {/* Matchup Matrix modal */}
