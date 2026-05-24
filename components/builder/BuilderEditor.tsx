@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { BuildOrder, BuildStep, BuildStepType, BuildStyle } from "@/data/build-orders";
 import { STEP_TYPE_CONFIG } from "@/data/build-orders";
-import { suggestIconKeys, getBuildStepIcon, iconKeyToLabel } from "@/data/icons";
+import { suggestIconKeys, getBuildStepIcon, iconKeyToLabel, iconKeyToStepType } from "@/data/icons";
 import type { Race } from "@/data/units";
 import BuildOrderTimeline from "@/components/BuildOrderTimeline";
 import {
@@ -189,6 +189,7 @@ function StepRow({
   onUpdate,
   onDelete,
   onMove,
+  onEnter,
 }: {
   step: BuildStep;
   index: number;
@@ -197,6 +198,7 @@ function StepRow({
   onUpdate: (s: BuildStep) => void;
   onDelete: () => void;
   onMove: (dir: -1 | 1) => void;
+  onEnter: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = STEP_TYPE_CONFIG[step.type];
@@ -268,25 +270,35 @@ function StepRow({
             </div>
           </div>
 
-          {/* Action field — drives icon suggestions below */}
+          {/* Action field — drives icon suggestions; Enter creates next step */}
           <div className="space-y-1">
-            <label className="text-[10px] text-white/30 uppercase tracking-wider">Action</label>
+            <label className="text-[10px] text-white/30 uppercase tracking-wider">
+              Action <span className="text-white/20 normal-case">— press Enter to add next step</span>
+            </label>
             <input
               className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
               value={step.action}
               onChange={(e) => onUpdate({ ...step, action: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && step.action.trim()) {
+                  e.preventDefault();
+                  onEnter();
+                }
+              }}
               placeholder="e.g. Build Farm × 2 + Barracks"
+              autoFocus={index > 0}
             />
           </div>
 
-          {/* Smart icon picker — auto-matches action text, race-filtered */}
+          {/* Smart icon picker — auto-matches action text, race-filtered, auto-sets type */}
           <IconSuggestions
             action={step.action}
             selected={step.iconKey}
             myRace={myRace}
             onSelect={(key, canonicalLabel) => {
               const newAction = canonicalLabel ?? step.action;
-              onUpdate({ ...step, iconKey: key, action: newAction });
+              const newType = key ? (iconKeyToStepType(key) as BuildStep["type"]) : step.type;
+              onUpdate({ ...step, iconKey: key, action: newAction, type: newType });
             }}
           />
 
@@ -328,6 +340,8 @@ export default function BuilderEditor() {
   const [build, setBuild] = useState<BuildOrder>(emptyBuild);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showTextImport, setShowTextImport] = useState(false);
+  const [importText, setImportText] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -341,6 +355,50 @@ export default function BuilderEditor() {
 
   function addStep() {
     setBuild((b) => ({ ...b, steps: [...b.steps, emptyStep()] }));
+  }
+
+  function addStepAfter(index: number) {
+    setBuild((b) => {
+      const steps = [...b.steps];
+      steps.splice(index + 1, 0, emptyStep());
+      return { ...b, steps };
+    });
+  }
+
+  /**
+   * Parses freeform text into build steps.
+   * Each non-empty line = 1 step.
+   * Optional supply prefix: "10/20 Headhunter × 2" → supply="10/20", action="Headhunter × 2"
+   */
+  function parseTextImport() {
+    const lines = importText.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+
+    const newSteps: BuildStep[] = lines.map((line) => {
+      // Try to extract supply notation at start: "10/20 ..." or "10/20: ..."
+      const supplyMatch = line.match(/^(\d+\/\d+)[:\s]+(.+)$/);
+      const supply = supplyMatch ? supplyMatch[1] : "5/10";
+      const actionText = supplyMatch ? supplyMatch[2].trim() : line;
+
+      // Find best icon match for this line
+      const suggestions = suggestIconKeys(actionText, build.myRace);
+      const best = suggestions[0];
+      const iconKey = best?.key;
+      const type = iconKey
+        ? (iconKeyToStepType(iconKey) as BuildStep["type"])
+        : "building";
+      // If action text is a search fragment and we found an icon → use canonical label
+      const action =
+        iconKey && looksLikeSearchQuery(actionText)
+          ? iconKeyToLabel(iconKey)
+          : actionText;
+
+      return { supply, type, action, priority: "normal" as const, iconKey };
+    });
+
+    setBuild((b) => ({ ...b, steps: [...b.steps, ...newSteps] }));
+    setImportText("");
+    setShowTextImport(false);
   }
 
   function updateStep(i: number, s: BuildStep) {
@@ -429,12 +487,23 @@ export default function BuilderEditor() {
             >
               {showPreview ? "Hide" : "Show"} Preview
             </button>
-            <button
-              onClick={handleExport}
-              className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
-            >
-              Export JSON
-            </button>
+              <button
+                onClick={() => setShowTextImport((v) => !v)}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs border transition-colors",
+                  showTextImport
+                    ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
+                    : "bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80"
+                )}
+              >
+                Paste Text
+              </button>
+              <button
+                onClick={handleExport}
+                className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
+              >
+                Export JSON
+              </button>
             <button
               onClick={() => importRef.current?.click()}
               className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
@@ -585,9 +654,42 @@ export default function BuilderEditor() {
                     onUpdate={(s) => updateStep(i, s)}
                     onDelete={() => deleteStep(i)}
                     onMove={(dir) => moveStep(i, dir)}
+                    onEnter={() => addStepAfter(i)}
                   />
                 ))}
               </div>
+
+              {/* Text import panel */}
+              {showTextImport && (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 space-y-2">
+                  <p className="text-[10px] text-amber-300/60">
+                    Paste any build order text — one action per line.
+                    Optionally prefix with supply: <span className="font-mono">10/20 Headhunter × 2</span>
+                  </p>
+                  <textarea
+                    rows={6}
+                    className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/40 resize-none font-mono"
+                    value={importText}
+                    onChange={(e) => setImportText(e.target.value)}
+                    placeholder={"5/10 Train Peons\n7/10 Build Burrow + Barracks\n10/20 Far Seer\n12/20 Headhunter × 2\n14/20 Creep with wolves..."}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={parseTextImport}
+                      disabled={!importText.trim()}
+                      className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 disabled:opacity-40 transition-all"
+                    >
+                      Parse & Add Steps
+                    </button>
+                    <button
+                      onClick={() => { setShowTextImport(false); setImportText(""); }}
+                      className="px-3 py-1.5 rounded-lg text-xs text-white/30 hover:text-white/60 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <button
                 onClick={addStep}

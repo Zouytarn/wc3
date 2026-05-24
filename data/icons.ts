@@ -396,6 +396,35 @@ export function suggestIconKeys(
     .map(({ key, path }) => ({ key, path }));
 }
 
+/**
+ * Infers the BuildStepType from an icon key.
+ * Used by the builder to auto-set the type when an icon is picked.
+ */
+export function iconKeyToStepType(key: string): string {
+  // Workers are identified explicitly — some sit inside BUILDING_ICONS
+  const WORKERS = new Set(["peon", "peasant", "acolyte", "wisp"]);
+  if (WORKERS.has(key)) return "worker";
+
+  // Research upgrades
+  const RESEARCH = new Set([
+    "defend", "bloodlust", "berserker_upgrade", "purge",
+    "flak_cannons", "long_rifle", "storm_hammers", "corrosive_breath",
+  ]);
+  if (RESEARCH.has(key)) return "research";
+
+  // Tier-up buildings
+  const TECH = new Set([
+    "stronghold", "fortress", "castle", "keep", "great_hall",
+    "tree_of_ages", "tree_of_eternity", "hall_of_the_dead",
+  ]);
+  if (TECH.has(key)) return "tech";
+
+  if (key in HERO_ICONS)     return "hero";
+  if (key in UNIT_ICONS)     return "unit";
+  if (key in BUILDING_ICONS) return "building";
+  return "unit";
+}
+
 export function getUnitIcon(id: string): string {
   return UNIT_ICONS[id] ?? "/icons/BTNFootman.png";
 }
