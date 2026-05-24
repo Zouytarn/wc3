@@ -164,55 +164,65 @@ export default function BuildOrderTimeline({ buildOrders }: BuildOrderTimelinePr
                   cfg.borderColor,
                   step.priority !== "critical" && "opacity-70"
                 )}>
-                  <div className="flex items-center gap-2">
-                    {/* Icons: render all keys from iconKeys[], fall back to single iconKey, then emoji */}
-                    {(() => {
-                      const keys = step.iconKeys ?? (step.iconKey ? [step.iconKey] : []);
-                      const validIcons = keys
-                        .map((k) => ({ k, src: getBuildStepIcon(k) }))
-                        .filter((x) => x.src);
-                      if (validIcons.length > 0) {
-                        return (
-                          <div className="flex gap-0.5 flex-shrink-0">
-                            {validIcons.map(({ k, src }) => (
-                              <div
-                                key={k}
-                                className={cn(
+                  {step.iconSteps ? (
+                    /* Compound step: each sub-item gets its own [icon] label */
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1.5 items-center">
+                        {step.iconSteps.map(({ key, label }) => {
+                          const src = getBuildStepIcon(key);
+                          return (
+                            <div key={key} className="flex items-center gap-1.5">
+                              {src ? (
+                                <div className={cn(
                                   "w-7 h-7 rounded-md overflow-hidden border flex-shrink-0",
                                   cfg.borderColor
-                                )}
-                              >
-                                <Image
-                                  src={src!}
-                                  alt=""
-                                  width={28}
-                                  height={28}
-                                  unoptimized
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      }
-                      return (
-                        <span className="text-base leading-none flex-shrink-0 w-7 text-center">
-                          {cfg.emoji}
-                        </span>
-                      );
-                    })()}
-
-                    <div className="min-w-0 flex-1">
-                      <p className={cn("text-[11px] font-medium leading-snug", cfg.textColor)}>
-                        {step.action}
-                      </p>
+                                )}>
+                                  <Image src={src} alt="" width={28} height={28} unoptimized className="w-full h-full object-cover" />
+                                </div>
+                              ) : (
+                                <span className="text-sm leading-none flex-shrink-0 w-7 text-center">{cfg.emoji}</span>
+                              )}
+                              <span className={cn("text-[11px] font-medium", cfg.textColor)}>{label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                       {step.note && (
-                        <p className="text-[10px] text-white/35 mt-0.5 leading-relaxed">
-                          {step.note}
-                        </p>
+                        <p className="text-[10px] text-white/35 leading-relaxed">{step.note}</p>
                       )}
                     </div>
-                  </div>
+                  ) : (
+                    /* Single step: one icon + full action text */
+                    <div className="flex items-center gap-2">
+                      {step.iconKey && getBuildStepIcon(step.iconKey) ? (
+                        <div className={cn(
+                          "w-7 h-7 flex-shrink-0 rounded-md overflow-hidden border",
+                          cfg.borderColor
+                        )}>
+                          <Image
+                            src={getBuildStepIcon(step.iconKey)!}
+                            alt=""
+                            width={28}
+                            height={28}
+                            unoptimized
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-base leading-none flex-shrink-0 w-7 text-center">{cfg.emoji}</span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className={cn("text-[11px] font-medium leading-snug", cfg.textColor)}>
+                          {step.action}
+                        </p>
+                        {step.note && (
+                          <p className="text-[10px] text-white/35 mt-0.5 leading-relaxed">
+                            {step.note}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
