@@ -68,7 +68,7 @@ export function BuildOrderList({ buildOrder }: BuildOrderListProps) {
           {steps.map((step, idx) => (
             <div key={idx} className={cn("rounded-r-xl border-l-2 pl-3 pr-3 py-2.5 bg-white/[0.03]", PRIORITY_ACCENT[step.priority])}>
               <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 font-mono text-xs text-white/30 w-10 pt-px">{step.time}</span>
+                <span className="flex-shrink-0 font-mono text-xs text-white/30 w-12 pt-px">{step.supply}</span>
                 <div className="flex-1 min-w-0">
                   <span className="text-sm text-white/80">{step.action}</span>
                   {step.note && <p className="mt-0.5 text-[11px] text-white/35 italic">{step.note}</p>}

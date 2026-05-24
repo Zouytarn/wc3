@@ -138,11 +138,12 @@ export default function BuildOrderTimeline({ buildOrders }: BuildOrderTimelinePr
             return (
               <div key={idx} className="flex gap-0 items-stretch">
 
-                {/* Time column */}
-                <div className="w-12 flex-shrink-0 flex flex-col items-end pt-2 pr-3">
+                {/* Supply column */}
+                <div className="w-14 flex-shrink-0 flex flex-col items-end pt-2 pr-3">
                   <span className="text-[10px] text-white/30 font-mono tabular-nums leading-none">
-                    {step.time}
+                    {step.supply}
                   </span>
+                  <span className="text-[8px] text-white/15 leading-none">food</span>
                 </div>
 
                 {/* Dot + connector */}

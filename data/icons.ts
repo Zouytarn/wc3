@@ -138,6 +138,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   spirit_tower:        BASE + "BTNZigguratUpgrade.png",
   hall_of_the_dead:    BASE + "BTNHallOfTheDead.png",
   altar_of_darkness:   BASE + "BTNAltarOfDarkness.png",
+  tavern:              BASE + "BTNTavern.png",
 
   // Research upgrades
   defend:           BASE + "BTNDefend.png",

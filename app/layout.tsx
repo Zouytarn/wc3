@@ -21,12 +21,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="text-lg">⚔️</span>
               <span className="font-semibold text-white tracking-tight text-sm">WC3 Strategy</span>
             </Link>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-4">
               <Link
                 href="/"
                 className="text-xs text-white/40 hover:text-white/70 transition-colors"
               >
                 Home
+              </Link>
+              <Link
+                href="/builder"
+                className="text-xs text-amber-400/60 hover:text-amber-300 transition-colors font-medium"
+              >
+                Build Creator
               </Link>
             </div>
           </div>

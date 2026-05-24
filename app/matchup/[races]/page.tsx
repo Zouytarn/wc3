@@ -3,7 +3,7 @@ import Link from "next/link";
 import { computeMatchup } from "@/lib/matchup-engine";
 import { getBuildOrders } from "@/data/build-orders";
 import { RACE_LABELS, type Race } from "@/data/units";
-import BuildOrderTimeline from "@/components/BuildOrderTimeline";
+import BuildOrderSection from "@/components/BuildOrderSection";
 import { DamageMatrix } from "@/components/DamageMatrix";
 import { CompositionAnalyzer } from "@/components/CompositionAnalyzer";
 
@@ -91,19 +91,13 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
         <CompositionAnalyzer myRace={myRace} enemyRace={enemyRace} defaultResult={result} />
 
         {/* Build Order */}
-        {buildOrders.length > 0 && (
-          <section>
-            <div className="flex items-center gap-3 mb-5">
-              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Build Order</p>
-              <span className="text-white/20 text-xs">·</span>
-              <span className="text-xs text-white/35">{RACE_LABELS[myRace]} vs {RACE_LABELS[enemyRace]}</span>
-              {buildOrders.length > 1 && (
-                <span className="text-[10px] text-white/25">{buildOrders.length} builds available</span>
-              )}
-            </div>
-            <BuildOrderTimeline buildOrders={buildOrders} />
-          </section>
-        )}
+        <BuildOrderSection
+          officialBuilds={buildOrders}
+          myRace={myRace}
+          enemyRace={enemyRace}
+          raceLabel={RACE_LABELS[myRace]}
+          enemyLabel={RACE_LABELS[enemyRace]}
+        />
 
         {/* Damage matrix */}
         <section>
