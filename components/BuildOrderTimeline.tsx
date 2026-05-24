@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { BuildOrder } from "@/data/build-orders";
 import {
@@ -8,6 +9,7 @@ import {
   STYLE_CONFIG,
   DIFFICULTY_CONFIG,
 } from "@/data/build-orders";
+import { getBuildStepIcon } from "@/data/icons";
 
 interface BuildOrderTimelineProps {
   buildOrders: BuildOrder[];
@@ -160,11 +162,29 @@ export default function BuildOrderTimeline({ buildOrders }: BuildOrderTimelinePr
                   "flex-1 ml-3 mb-2.5 rounded-xl px-3 py-2 border",
                   cfg.bgColor,
                   cfg.borderColor,
-                  step.priority !== "critical" && "opacity-75"
+                  step.priority !== "critical" && "opacity-70"
                 )}>
-                  <div className="flex items-start gap-1.5">
-                    <span className="text-[13px] leading-none mt-0.5 flex-shrink-0">{cfg.emoji}</span>
-                    <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    {/* Icon: real PNG when available, emoji fallback */}
+                    {step.iconKey && getBuildStepIcon(step.iconKey) ? (
+                      <div className={cn(
+                        "w-8 h-8 flex-shrink-0 rounded-lg overflow-hidden border",
+                        cfg.borderColor
+                      )}>
+                        <Image
+                          src={getBuildStepIcon(step.iconKey)!}
+                          alt=""
+                          width={32}
+                          height={32}
+                          unoptimized
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-base leading-none flex-shrink-0 w-8 text-center">{cfg.emoji}</span>
+                    )}
+
+                    <div className="min-w-0 flex-1">
                       <p className={cn("text-[11px] font-medium leading-snug", cfg.textColor)}>
                         {step.action}
                       </p>

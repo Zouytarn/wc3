@@ -91,6 +91,15 @@ export function getHeroIcon(id: string): string {
   return HERO_ICONS[id] ?? "/icons/BTNHeroPaladin.png";
 }
 
+/**
+ * Returns the icon path for a build step's iconKey.
+ * Looks up in both UNIT_ICONS and HERO_ICONS.
+ * Returns undefined if no icon is found (caller should fall back to emoji).
+ */
+export function getBuildStepIcon(iconKey: string): string | undefined {
+  return UNIT_ICONS[iconKey] ?? HERO_ICONS[iconKey] ?? undefined;
+}
+
 // Race faction icons — official Reforged faction art
 export const RACE_ICONS: Record<string, string> = {
   human:    "/race-icons/Warcraft_III_Reforged_-_Humans_Icon.png",
