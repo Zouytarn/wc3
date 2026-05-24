@@ -207,10 +207,19 @@ function StepRow({
         {/* Type dot */}
         <span className={cn("w-2 h-2 rounded-full flex-shrink-0", cfg.dotColor)} />
 
-        {/* Icon (if selected) */}
-        {iconPath && (
+        {/* Icon(s) — show iconSteps if compound, else single iconKey */}
+        {step.iconSteps ? (
+          <div className="flex gap-0.5 flex-shrink-0">
+            {step.iconSteps.slice(0, 3).map(({ key, label }) => {
+              const p = getBuildStepIcon(key);
+              return p ? (
+                <img key={key} src={p} alt={label} title={label} className="w-6 h-6 rounded" />
+              ) : null;
+            })}
+          </div>
+        ) : iconPath ? (
           <img src={iconPath} alt={step.iconKey} className="w-6 h-6 rounded flex-shrink-0" />
-        )}
+        ) : null}
 
         {/* Action text */}
         <span className="flex-1 min-w-0 text-xs text-white/70 truncate">
@@ -470,26 +479,68 @@ export default function BuilderEditor() {
   }
 
   /**
+   * Given a step's action text, tries to detect one or multiple icons.
+   * Splits on commas, em-dashes and "and" to find compound steps.
+   * Returns iconKey (single) or iconSteps (multiple, deduplicated).
+   */
+  function detectIconsInText(text: string): {
+    iconKey?: string;
+    iconSteps?: Array<{ key: string; label: string }>;
+  } {
+    // Split into segments on natural separators
+    const segments = text
+      .split(/,|–|—|\band\b/i)
+      .map((s) => s.trim().replace(/^\d+\s*/, "").trim())
+      .filter((s) => s.length > 2);
+
+    const found: Array<{ key: string; label: string }> = [];
+    const usedKeys = new Set<string>();
+
+    for (const seg of segments) {
+      const suggestions = suggestIconKeys(seg, build.myRace);
+      for (const s of suggestions) {
+        if (!usedKeys.has(s.key)) {
+          usedKeys.add(s.key);
+          found.push({ key: s.key, label: iconKeyToLabel(s.key) });
+          break;
+        }
+      }
+    }
+
+    if (found.length >= 2) return { iconSteps: found };
+    if (found.length === 1) return { iconKey: found[0].key };
+    return {};
+  }
+
+  /**
    * Parses freeform text into build steps — each line = 1 step.
-   * Optional supply prefix: "10/20 Headhunter × 2"
+   * Handles Grubby-style: "6/10 – 4 peon to gold, 1 peon to build Altar"
+   * Supports em-dash, en-dash, and hyphen separators between supply and action.
    */
   function parseTextImport() {
     const lines = importText.split("\n").map((l) => l.trim()).filter(Boolean);
     if (!lines.length) return;
 
     const newSteps: BuildStep[] = lines.map((line) => {
-      const supplyMatch = line.match(/^(\d+\/\d+)[:\s-]+(.+)$/);
+      // Match supply with any dash variant (hyphen, en-dash, em-dash) as separator
+      const supplyMatch = line.match(/^(\d+\/\d+)\s*[-–—:]\s*(.+)$/);
       const supply = supplyMatch ? supplyMatch[1] : "5/10";
       const actionText = supplyMatch ? supplyMatch[2].trim() : line;
 
-      const suggestions = suggestIconKeys(actionText, build.myRace);
-      const best = suggestions[0];
-      const iconKey = best?.key;
-      const type = iconKey ? (iconKeyToStepType(iconKey) as BuildStepType) : "unit";
-      const action =
-        iconKey && looksLikeSearchQuery(actionText) ? iconKeyToLabel(iconKey) : actionText;
+      const { iconKey, iconSteps } = detectIconsInText(actionText);
 
-      return { supply, type, action, priority: "normal" as const, iconKey };
+      // Determine type from first icon found
+      const primaryKey = iconKey ?? iconSteps?.[0]?.key;
+      const type = primaryKey ? (iconKeyToStepType(primaryKey) as BuildStepType) : "unit";
+
+      // Keep original action text (it's descriptive, not a bare search query)
+      return {
+        supply,
+        type,
+        action: actionText,
+        priority: "normal" as const,
+        ...(iconSteps ? { iconSteps } : iconKey ? { iconKey } : {}),
+      };
     });
 
     setBuild((b) => ({ ...b, steps: [...b.steps, ...newSteps] }));
