@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { computeMatchup } from "@/lib/matchup-engine";
-import { getBuildOrder } from "@/data/build-orders";
+import { getBuildOrders } from "@/data/build-orders";
 import { RACE_LABELS, type Race } from "@/data/units";
-import { BuildOrderList } from "@/components/BuildOrderList";
+import BuildOrderTimeline from "@/components/BuildOrderTimeline";
 import { DamageMatrix } from "@/components/DamageMatrix";
 import { CompositionAnalyzer } from "@/components/CompositionAnalyzer";
 
@@ -46,7 +46,7 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
 
   const { myRace, enemyRace } = parsed;
   const result = computeMatchup(myRace, enemyRace);
-  const buildOrder = getBuildOrder(myRace, enemyRace);
+  const buildOrders = getBuildOrders(myRace, enemyRace);
 
   return (
     <div className="min-h-screen">
@@ -91,14 +91,17 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
         <CompositionAnalyzer myRace={myRace} enemyRace={enemyRace} defaultResult={result} />
 
         {/* Build Order */}
-        {buildOrder && (
+        {buildOrders.length > 0 && (
           <section>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-5">
               <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Build Order</p>
               <span className="text-white/20 text-xs">·</span>
               <span className="text-xs text-white/35">{RACE_LABELS[myRace]} vs {RACE_LABELS[enemyRace]}</span>
+              {buildOrders.length > 1 && (
+                <span className="text-[10px] text-white/25">{buildOrders.length} builds available</span>
+              )}
             </div>
-            <BuildOrderList buildOrder={buildOrder} />
+            <BuildOrderTimeline buildOrders={buildOrders} />
           </section>
         )}
 
