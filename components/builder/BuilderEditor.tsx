@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { BuildOrder, BuildStep, BuildStepType, BuildStyle } from "@/data/build-orders";
 import { STEP_TYPE_CONFIG } from "@/data/build-orders";
+import { suggestIconKeys, getBuildStepIcon } from "@/data/icons";
 import type { Race } from "@/data/units";
 import BuildOrderTimeline from "@/components/BuildOrderTimeline";
 import {
@@ -86,6 +87,85 @@ function RacePicker({
   );
 }
 
+function IconSuggestions({
+  action,
+  selected,
+  onSelect,
+}: {
+  action: string;
+  selected: string | undefined;
+  onSelect: (key: string | undefined) => void;
+}) {
+  const suggestions = suggestIconKeys(action);
+  if (suggestions.length === 0 && !selected) return null;
+
+  const selectedPath = selected ? getBuildStepIcon(selected) : undefined;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2">
+        <label className="text-[10px] text-white/30 uppercase tracking-wider">Icon</label>
+        {selected && (
+          <span className="text-[10px] text-white/30 font-mono">{selected}</span>
+        )}
+        {selected && (
+          <button
+            onClick={() => onSelect(undefined)}
+            className="text-[10px] text-white/25 hover:text-red-400 transition-colors ml-auto"
+          >
+            clear
+          </button>
+        )}
+      </div>
+
+      {/* Currently selected icon (large) */}
+      {selectedPath && (
+        <div className="flex items-center gap-2 pb-1">
+          <img
+            src={selectedPath}
+            alt={selected}
+            className="w-10 h-10 object-cover rounded-lg border border-amber-500/40"
+          />
+          <span className="text-xs text-amber-300/70 font-medium">Selected</span>
+        </div>
+      )}
+
+      {/* Suggestions grid */}
+      {suggestions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {suggestions.map(({ key, path }) => (
+            <button
+              key={key}
+              onClick={() => onSelect(selected === key ? undefined : key)}
+              title={key.replace(/_/g, " ")}
+              className={cn(
+                "group relative rounded-lg border p-0.5 transition-all",
+                selected === key
+                  ? "border-amber-500/60 bg-amber-500/10"
+                  : "border-white/[0.08] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.07]"
+              )}
+            >
+              <img
+                src={path}
+                alt={key}
+                className="w-9 h-9 object-cover rounded-md"
+              />
+              {/* Tooltip label */}
+              <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-white/50 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/70 px-1 rounded">
+                {key.replace(/_/g, " ")}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {suggestions.length === 0 && !selected && action.length > 2 && (
+        <p className="text-[10px] text-white/20 italic">No icons matched — try more specific words</p>
+      )}
+    </div>
+  );
+}
+
 function StepRow({
   step,
   index,
@@ -103,6 +183,7 @@ function StepRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = STEP_TYPE_CONFIG[step.type];
+  const iconPath = step.iconKey ? getBuildStepIcon(step.iconKey) : undefined;
 
   return (
     <div className={cn("rounded-xl border transition-all", cfg.borderColor, cfg.bgColor)}>
@@ -111,11 +192,21 @@ function StepRow({
         className="flex items-center gap-2 px-3 py-2 cursor-pointer"
         onClick={() => setExpanded((v) => !v)}
       >
-        <span className="text-[10px] font-mono text-white/30 w-9 flex-shrink-0">{step.supply}</span>
+        {/* Icon preview in compact row */}
+        {iconPath ? (
+          <img src={iconPath} alt={step.iconKey} className="w-6 h-6 rounded flex-shrink-0" />
+        ) : (
+          <span className="text-[10px] font-mono text-white/30 w-9 flex-shrink-0">{step.supply}</span>
+        )}
+        {iconPath && (
+          <span className="text-[10px] font-mono text-white/25 flex-shrink-0">{step.supply}</span>
+        )}
         <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0", cfg.textColor, cfg.bgColor)}>
           {step.type}
         </span>
-        <span className="text-xs text-white/70 flex-1 truncate min-w-0">{step.action || <span className="text-white/25 italic">no action text</span>}</span>
+        <span className="text-xs text-white/70 flex-1 truncate min-w-0">
+          {step.action || <span className="text-white/25 italic">no action text</span>}
+        </span>
         <span className={cn(
           "text-[9px] px-1.5 py-0.5 rounded flex-shrink-0",
           step.priority === "critical" ? "bg-red-500/20 text-red-400" :
@@ -125,52 +216,43 @@ function StepRow({
         </span>
         {/* Move / delete */}
         <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => onMove(-1)}
-            disabled={index === 0}
-            className="text-white/20 hover:text-white/60 disabled:opacity-20 text-xs px-1"
-            title="Move up"
-          >▲</button>
-          <button
-            onClick={() => onMove(1)}
-            disabled={index === total - 1}
-            className="text-white/20 hover:text-white/60 disabled:opacity-20 text-xs px-1"
-            title="Move down"
-          >▼</button>
-          <button
-            onClick={onDelete}
-            className="text-red-400/40 hover:text-red-400 text-xs px-1"
-            title="Delete step"
-          >✕</button>
+          <button onClick={() => onMove(-1)} disabled={index === 0}
+            className="text-white/20 hover:text-white/60 disabled:opacity-20 text-xs px-1" title="Move up">▲</button>
+          <button onClick={() => onMove(1)} disabled={index === total - 1}
+            className="text-white/20 hover:text-white/60 disabled:opacity-20 text-xs px-1" title="Move down">▼</button>
+          <button onClick={onDelete}
+            className="text-red-400/40 hover:text-red-400 text-xs px-1" title="Delete step">✕</button>
         </div>
         <span className="text-white/20 text-[10px] flex-shrink-0">{expanded ? "▲" : "▼"}</span>
       </div>
 
       {/* Expanded form */}
       {expanded && (
-        <div className="px-3 pb-3 grid grid-cols-2 gap-2 border-t border-white/[0.06] pt-2.5">
-          <div className="space-y-1">
-            <label className="text-[10px] text-white/30 uppercase tracking-wider">Supply (X/Y)</label>
-            <input
-              className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono outline-none focus:border-amber-500/50"
-              value={step.supply}
-              onChange={(e) => onUpdate({ ...step, supply: e.target.value })}
-              placeholder="6/10"
-            />
+        <div className="px-3 pb-3 space-y-3 border-t border-white/[0.06] pt-2.5">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] text-white/30 uppercase tracking-wider">Supply (X/Y)</label>
+              <input
+                className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono outline-none focus:border-amber-500/50"
+                value={step.supply}
+                onChange={(e) => onUpdate({ ...step, supply: e.target.value })}
+                placeholder="6/10"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-white/30 uppercase tracking-wider">Type</label>
+              <select
+                className="w-full bg-[#0f0f1a] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
+                value={step.type}
+                onChange={(e) => onUpdate({ ...step, type: e.target.value as BuildStepType })}
+              >
+                {STEP_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
           </div>
 
+          {/* Action field — drives icon suggestions below */}
           <div className="space-y-1">
-            <label className="text-[10px] text-white/30 uppercase tracking-wider">Type</label>
-            <select
-              className="w-full bg-[#0f0f1a] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
-              value={step.type}
-              onChange={(e) => onUpdate({ ...step, type: e.target.value as BuildStepType })}
-            >
-              {STEP_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-
-          <div className="space-y-1 col-span-2">
             <label className="text-[10px] text-white/30 uppercase tracking-wider">Action</label>
             <input
               className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
@@ -180,37 +262,36 @@ function StepRow({
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="text-[10px] text-white/30 uppercase tracking-wider">Priority</label>
-            <select
-              className="w-full bg-[#0f0f1a] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
-              value={step.priority}
-              onChange={(e) => onUpdate({ ...step, priority: e.target.value as BuildStep["priority"] })}
-            >
-              <option value="critical">Critical</option>
-              <option value="normal">Normal</option>
-              <option value="optional">Optional</option>
-            </select>
-          </div>
+          {/* Smart icon picker — auto-matches action text */}
+          <IconSuggestions
+            action={step.action}
+            selected={step.iconKey}
+            onSelect={(key) => onUpdate({ ...step, iconKey: key })}
+          />
 
-          <div className="space-y-1">
-            <label className="text-[10px] text-white/30 uppercase tracking-wider">Icon key (optional)</label>
-            <input
-              className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono outline-none focus:border-amber-500/50"
-              value={step.iconKey ?? ""}
-              onChange={(e) => onUpdate({ ...step, iconKey: e.target.value || undefined })}
-              placeholder="e.g. grunt, archmage"
-            />
-          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] text-white/30 uppercase tracking-wider">Priority</label>
+              <select
+                className="w-full bg-[#0f0f1a] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
+                value={step.priority}
+                onChange={(e) => onUpdate({ ...step, priority: e.target.value as BuildStep["priority"] })}
+              >
+                <option value="critical">Critical</option>
+                <option value="normal">Normal</option>
+                <option value="optional">Optional</option>
+              </select>
+            </div>
 
-          <div className="space-y-1 col-span-2">
-            <label className="text-[10px] text-white/30 uppercase tracking-wider">Note (optional)</label>
-            <input
-              className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
-              value={step.note ?? ""}
-              onChange={(e) => onUpdate({ ...step, note: e.target.value || undefined })}
-              placeholder="Extra tip or context for this step"
-            />
+            <div className="space-y-1">
+              <label className="text-[10px] text-white/30 uppercase tracking-wider">Note (optional)</label>
+              <input
+                className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-amber-500/50"
+                value={step.note ?? ""}
+                onChange={(e) => onUpdate({ ...step, note: e.target.value || undefined })}
+                placeholder="Extra tip or context"
+              />
+            </div>
           </div>
         </div>
       )}

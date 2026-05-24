@@ -151,6 +151,91 @@ export const BUILDING_ICONS: Record<string, string> = {
   corrosive_breath: BASE + "BTNCorrosiveBreath.png",
 };
 
+/**
+ * All icon keys combined — used for smart suggestion matching.
+ * Order matters: BUILDING first so buildings score higher for action text.
+ */
+const ALL_ICONS: Array<{ key: string; path: string }> = [
+  ...Object.entries(BUILDING_ICONS).map(([key, path]) => ({ key, path })),
+  ...Object.entries(UNIT_ICONS).map(([key, path]) => ({ key, path })),
+  ...Object.entries(HERO_ICONS).map(([key, path]) => ({ key, path })),
+];
+
+/** Common shorthand aliases → canonical icon keys */
+const ALIASES: Record<string, string[]> = {
+  altar:   ["altar_of_kings", "altar_of_storms", "altar_of_elders", "altar_of_darkness"],
+  am:      ["archmage"],
+  dk:      ["death_knight"],
+  tc:      ["tauren_chieftain"],
+  bm:      ["blademaster"],
+  fs:      ["far_seer"],
+  sh:      ["shadow_hunter"],
+  dh:      ["demon_hunter"],
+  kotg:    ["keeper_of_the_grove"],
+  potm:    ["priestess_of_the_moon"],
+  dl:      ["dread_lord"],
+  gryphon: ["gryphon_rider"],
+  archers: ["archer"],
+  grunts:  ["grunt"],
+  barrack: ["barracks", "human_barracks"],
+  moonwell:["moon_well"],
+  zigg:    ["ziggurat"],
+};
+
+/**
+ * Analyzes free-form action text and returns the best-matching icon keys in order.
+ * Used by the build order creator for smart auto-suggestions.
+ */
+export function suggestIconKeys(actionText: string): Array<{ key: string; path: string }> {
+  if (!actionText.trim()) return [];
+
+  // Normalize: lowercase, replace delimiters with spaces, keep only a-z0-9 and spaces
+  const normalized = actionText
+    .toLowerCase()
+    .replace(/[→×x×+:]/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const words = normalized.split(" ").filter((w) => w.length > 1);
+  if (words.length === 0) return [];
+
+  // Expand aliases: e.g. "altar" → also consider "altar_of_kings" etc.
+  const expandedWords = new Set(words);
+  for (const word of words) {
+    const aliasExpansions = ALIASES[word];
+    if (aliasExpansions) aliasExpansions.forEach((a) => expandedWords.add(a));
+  }
+
+  // Score each icon key
+  const scored = ALL_ICONS.map(({ key, path }) => {
+    const keyParts = key.split("_"); // ["far", "seer"]
+    let score = 0;
+
+    for (const word of expandedWords) {
+      const wordParts = word.split("_");
+      for (const kp of keyParts) {
+        for (const wp of wordParts) {
+          if (kp === wp) { score += 4; break; }                  // exact match
+          if (kp.startsWith(wp) && wp.length >= 3) { score += 2; break; } // prefix
+          if (wp.startsWith(kp) && kp.length >= 3) { score += 1; break; } // suffix
+        }
+      }
+    }
+
+    // Bonus: if the full key appears verbatim in normalized text
+    if (normalized.replace(/ /g, "_").includes(key)) score += 5;
+
+    return { key, path, score };
+  });
+
+  return scored
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10)
+    .map(({ key, path }) => ({ key, path }));
+}
+
 export function getUnitIcon(id: string): string {
   return UNIT_ICONS[id] ?? "/icons/BTNFootman.png";
 }
