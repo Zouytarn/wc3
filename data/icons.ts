@@ -83,6 +83,73 @@ export const HERO_ICONS: Record<string, string> = {
   crypt_lord:   BASE + "BTNHeroCryptLord.png",
 };
 
+// Building, tech, research, and worker icons for the Build Order timeline
+export const BUILDING_ICONS: Record<string, string> = {
+  // Workers
+  peon:    BASE + "BTNPeon.png",
+  peasant: BASE + "BTNPeasant.png",
+  acolyte: BASE + "BTNAcolyte.png",
+
+  // Human buildings
+  farm:            BASE + "BTNFarm.png",
+  barracks:        BASE + "BTNBarracks.png",
+  human_barracks:  BASE + "BTNHumanBarracks.png",
+  blacksmith:      BASE + "BTNBlacksmith.png",
+  lumber_mill:     BASE + "BTNHumanLumberMill.png",
+  arcane_sanctum:  BASE + "BTNArcaneSanctum.png",
+  workshop:        BASE + "BTNWorkshop.png",
+  gryphon_aviary:  BASE + "BTNGryphonAviary.png",
+  altar_of_kings:  BASE + "BTNAltarOfKings.png",
+  keep:            BASE + "BTNKeep.png",
+  castle:          BASE + "BTNCastle.png",
+  town_hall:       BASE + "BTNTownHall.png",
+
+  // Orc buildings
+  burrow:        BASE + "BTNTrollBurrow.png",
+  great_hall:    BASE + "BTNGreatHall.png",
+  stronghold:    BASE + "BTNStrongHold.png",
+  fortress:      BASE + "BTNFortress.png",
+  voodoo_lounge: BASE + "BTNVoodooLounge.png",
+  spirit_lodge:  BASE + "BTNSpiritLodge.png",
+  beastiary:     BASE + "BTNBeastiary.png",
+  tauren_totem:  BASE + "BTNTaurenTotem.png",
+  altar_of_storms: BASE + "BTNAltarOfStorms.png",
+
+  // Night Elf buildings
+  moon_well:       BASE + "BTNMoonWell.png",
+  ancient_of_war:  BASE + "BTNAncientOfTheEarth.png",
+  ancient_of_lore: BASE + "BTNAncientOfLore.png",
+  ancient_of_wind: BASE + "BTNAncientOfWonders.png",
+  hunters_hall:    BASE + "BTNHuntersHall.png",
+  elven_farm:      BASE + "BTNElvenFarm.png",
+  tree_of_life:    BASE + "BTNTreeOfLife.png",
+  tree_of_ages:    BASE + "BTNTreeOfAges.png",
+  tree_of_eternity: BASE + "BTNTreeOfEternity.png",
+  altar_of_elders: BASE + "BTNAltarOfElders.png",
+
+  // Undead buildings
+  crypt:               BASE + "BTNCrypt.png",
+  necropolis:          BASE + "BTNNecropolis.png",
+  graveyard:           BASE + "BTNGraveYard.png",
+  haunted_mine:        BASE + "BTNHauntedMine.png",
+  slaughterhouse:      BASE + "BTNSlaughterHouse.png",
+  temple_of_the_damned: BASE + "BTNTempleOfTheDamned.png",
+  ziggurat:            BASE + "BTNZiggurat.png",
+  spirit_tower:        BASE + "BTNZigguratUpgrade.png",
+  hall_of_the_dead:    BASE + "BTNHallOfTheDead.png",
+  altar_of_darkness:   BASE + "BTNAltarOfDarkness.png",
+
+  // Research upgrades
+  defend:           BASE + "BTNDefend.png",
+  bloodlust:        BASE + "BTNBloodLust.png",
+  berserker_upgrade: BASE + "BTNBerserkForTrolls.png",
+  purge:            BASE + "BTNPurge.png",
+  flak_cannons:     BASE + "BTNFlakCannons.png",
+  long_rifle:       BASE + "BTNDwarvenLongRifle.png",
+  storm_hammers:    BASE + "BTNStormHammer.png",
+  corrosive_breath: BASE + "BTNCorrosiveBreath.png",
+};
+
 export function getUnitIcon(id: string): string {
   return UNIT_ICONS[id] ?? "/icons/BTNFootman.png";
 }
@@ -93,11 +160,11 @@ export function getHeroIcon(id: string): string {
 
 /**
  * Returns the icon path for a build step's iconKey.
- * Looks up in both UNIT_ICONS and HERO_ICONS.
+ * Looks up in BUILDING_ICONS first, then UNIT_ICONS and HERO_ICONS.
  * Returns undefined if no icon is found (caller should fall back to emoji).
  */
 export function getBuildStepIcon(iconKey: string): string | undefined {
-  return UNIT_ICONS[iconKey] ?? HERO_ICONS[iconKey] ?? undefined;
+  return BUILDING_ICONS[iconKey] ?? UNIT_ICONS[iconKey] ?? HERO_ICONS[iconKey] ?? undefined;
 }
 
 // Race faction icons — official Reforged faction art
