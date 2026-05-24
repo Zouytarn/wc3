@@ -358,8 +358,6 @@ export default function BuilderEditor() {
   const [build, setBuild] = useState<BuildOrder>(emptyBuild);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [showTextImport, setShowTextImport] = useState(false);
   const [importText, setImportText] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -480,18 +478,32 @@ export default function BuilderEditor() {
 
   /**
    * Given a step's action text, tries to detect one or multiple icons.
-   * Splits on commas, em-dashes and "and" to find compound steps.
-   * Returns iconKey (single) or iconSteps (multiple, deduplicated).
+   * Two-pass splitting:
+   *   1. Primary: commas, em-dashes, "and"
+   *   2. Secondary: build-verb phrases ("to build X", "make X", etc.)
+   * Ordinal prefixes like "2nd" are preserved; plain number prefixes ("4 peon") are stripped.
    */
   function detectIconsInText(text: string): {
     iconKey?: string;
     iconSteps?: Array<{ key: string; label: string }>;
   } {
-    // Split into segments on natural separators
-    const segments = text
+    // Primary split on natural list separators
+    const primarySegments = text
       .split(/,|–|—|\band\b/i)
-      .map((s) => s.trim().replace(/^\d+\s*/, "").trim())
+      // Only strip digits followed by whitespace (avoids breaking "2nd", "1st")
+      .map((s) => s.trim().replace(/^\d+\s+/, "").trim())
       .filter((s) => s.length > 2);
+
+    // Secondary split: break each segment further on "to build/make/train/create/hire"
+    // e.g. "new peon to build Burrow" → ["new peon", "Burrow"]
+    const segments: string[] = [];
+    for (const seg of primarySegments) {
+      const parts = seg
+        .split(/\bto\s+(?:build|make|train|create|hire)\b|\bmake\b|\btrain\b/i)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 2);
+      segments.push(...(parts.length > 1 ? parts : [seg]));
+    }
 
     const found: Array<{ key: string; label: string }> = [];
     const usedKeys = new Set<string>();
@@ -545,7 +557,7 @@ export default function BuilderEditor() {
 
     setBuild((b) => ({ ...b, steps: [...b.steps, ...newSteps] }));
     setImportText("");
-    setShowTextImport(false);
+    setImportText("");
   }
 
   async function handleSave() {
@@ -617,6 +629,19 @@ export default function BuilderEditor() {
             <p className="text-xs text-white/40 mt-0.5">Create, save and share your own WC3 build orders</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => exportAsJSON(build)}
+              className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
+            >
+              Export JSON
+            </button>
+            <button
+              onClick={() => importRef.current?.click()}
+              className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
+            >
+              Import JSON
+            </button>
+            <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
             {/* Auth button */}
             {supabase && (
               session ? (
@@ -640,36 +665,6 @@ export default function BuilderEditor() {
                 </button>
               )
             )}
-            <button
-              onClick={() => setShowPreview((v) => !v)}
-              className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
-            >
-              {showPreview ? "Hide" : "Show"} Preview
-            </button>
-            <button
-              onClick={() => setShowTextImport((v) => !v)}
-              className={cn(
-                "px-3 py-1.5 rounded-xl text-xs border transition-colors",
-                showTextImport
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
-                  : "bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80"
-              )}
-            >
-              Paste Text
-            </button>
-            <button
-              onClick={() => exportAsJSON(build)}
-              className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
-            >
-              Export JSON
-            </button>
-            <button
-              onClick={() => importRef.current?.click()}
-              className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
-            >
-              Import JSON
-            </button>
-            <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
             <button
               onClick={handleSave}
               className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition-all"
@@ -814,15 +809,14 @@ export default function BuilderEditor() {
               ))}
 
               {/* Text import panel */}
-              {showTextImport && (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 space-y-2 mt-2">
-                  <p className="text-[10px] text-amber-300/60">
-                    Paste build order text — one step per line. Prefix with supply if you have it:{" "}
-                    <span className="font-mono">10/20 Headhunter × 2</span>
+              {/* Always-visible paste text area */}
+              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 space-y-2 mt-1">
+                  <p className="text-[10px] text-white/25">
+                    Paste build order text — one step per line.{" "}
+                    <span className="font-mono text-white/20">6/10 – 4 peon to gold, 1 peon to build Altar</span>
                   </p>
                   <textarea
-                    rows={6}
-                    autoFocus
+                    rows={4}
                     className="w-full bg-white/[0.06] border border-white/[0.10] rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500/40 resize-none font-mono"
                     value={importText}
                     onChange={(e) => setImportText(e.target.value)}
@@ -837,14 +831,13 @@ export default function BuilderEditor() {
                       Parse & Add Steps
                     </button>
                     <button
-                      onClick={() => { setShowTextImport(false); setImportText(""); }}
+                      onClick={() => setImportText("")}
                       className="px-3 py-1.5 rounded-lg text-xs text-white/30 hover:text-white/60 transition-colors"
                     >
-                      Cancel
+                      Clear
                     </button>
                   </div>
                 </div>
-              )}
 
               <button
                 onClick={addStep}
@@ -852,16 +845,23 @@ export default function BuilderEditor() {
               >
                 + Add Step
               </button>
+
+              {/* Prominent save CTA — visible after pasting steps */}
+              {build.steps.length > 0 && (
+                <button
+                  onClick={handleSave}
+                  className="w-full py-3 rounded-xl text-sm font-semibold bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition-all mt-2"
+                >
+                  {saveMsg ?? "💾 Save Build"}
+                </button>
+              )}
             </div>
 
             {/* Preview */}
-            {showPreview && (
+            {build.steps.length > 0 && (
               <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
-                <p className="text-[10px] text-white/30 uppercase tracking-wider mb-4">Live Preview</p>
-                {build.steps.length > 0
-                  ? <BuildOrderTimeline buildOrders={[{ ...build, isCustom: true }]} />
-                  : <p className="text-sm text-white/25 text-center py-4">Add steps to see a preview</p>
-                }
+                <p className="text-[10px] text-white/30 uppercase tracking-wider mb-4">Preview</p>
+                <BuildOrderTimeline buildOrders={[{ ...build, isCustom: true }]} />
               </div>
             )}
           </div>

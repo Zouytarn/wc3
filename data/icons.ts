@@ -105,6 +105,7 @@ export const BUILDING_ICONS: Record<string, string> = {
   town_hall:       BASE + "BTNTownHall.png",
 
   // Orc buildings
+  war_mill:      BASE + "BTNOrcLumberUpgradeTwo.png",
   burrow:        BASE + "BTNTrollBurrow.png",
   great_hall:    BASE + "BTNGreatHall.png",
   stronghold:    BASE + "BTNStrongHold.png",
@@ -164,7 +165,7 @@ export const ICON_RACES: Record<string, IconRace> = {
   peon: "neutral", peasant: "neutral", acolyte: "neutral",
 
   // Human buildings
-  farm: "human", barracks: "human", human_barracks: "human",
+  farm: "human", human_barracks: "human",
   blacksmith: "human", lumber_mill: "human", arcane_sanctum: "human",
   workshop: "human", gryphon_aviary: "human", altar_of_kings: "human",
   keep: "human", castle: "human", town_hall: "human",
@@ -179,6 +180,7 @@ export const ICON_RACES: Record<string, IconRace> = {
   archmage: "human", paladin: "human", mountain_king: "human", blood_mage: "human",
 
   // Orc buildings
+  barracks: "orc", war_mill: "orc",
   burrow: "orc", great_hall: "orc", stronghold: "orc", fortress: "orc",
   voodoo_lounge: "orc", spirit_lodge: "orc", beastiary: "orc",
   tauren_totem: "orc", altar_of_storms: "orc",
@@ -331,9 +333,24 @@ const ALIASES: Record<string, string[]> = {
   archers:  ["archer"],
   grunts:   ["grunt"],
   barrack:  ["barracks", "human_barracks"],
+  warmill:  ["war_mill"],
+  mill:     ["war_mill"],
   moonwell: ["moon_well"],
   zigg:     ["ziggurat"],
   hh:       ["headhunter"],
+  rax:      ["barracks", "human_barracks"],
+  wd:       ["witch_doctor"],
+  mk:       ["mountain_king"],
+  kael:     ["blood_mage"],
+  lich:     ["lich_king"],
+  sorc:     ["sorceress"],
+  zerker:   ["berserker_upgrade"],
+  berserker: ["berserker_upgrade"],
+  zerk:     ["berserker_upgrade"],
+  headhunters: ["headhunter"],
+  ghouls:   ["ghoul"],
+  necros:   ["necromancer"],
+  abombs:   ["abomination"],
 };
 
 /**

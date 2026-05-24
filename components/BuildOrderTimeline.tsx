@@ -166,30 +166,32 @@ export default function BuildOrderTimeline({ buildOrders }: BuildOrderTimelinePr
                   step.priority !== "critical" && "opacity-70"
                 )}>
                   {step.iconSteps ? (
-                    /* Compound step: each sub-item gets its own [icon] label */
+                    /* Compound step: icons as decorators + full action text */
                     <div className="flex flex-col gap-1 w-full">
-                      <div className="flex flex-wrap gap-x-3 gap-y-1.5 items-center">
-                        {step.iconSteps.map(({ key, label }) => {
-                          const src = getBuildStepIcon(key);
-                          return (
-                            <div key={key} className="flex items-center gap-1.5">
-                              {src ? (
-                                <div className={cn(
-                                  "w-7 h-7 rounded-md overflow-hidden border flex-shrink-0",
-                                  cfg.borderColor
-                                )}>
-                                  <Image src={src} alt="" width={28} height={28} unoptimized className="w-full h-full object-cover" />
-                                </div>
-                              ) : (
-                                <span className="text-sm leading-none flex-shrink-0 w-7 text-center">{cfg.emoji}</span>
-                              )}
-                              <span className={cn("text-[11px] font-medium", cfg.textColor)}>{label}</span>
-                            </div>
-                          );
-                        })}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Icon cluster */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {step.iconSteps.map(({ key, label }) => {
+                            const src = getBuildStepIcon(key);
+                            return src ? (
+                              <div key={key} className={cn(
+                                "w-7 h-7 rounded-md overflow-hidden border flex-shrink-0",
+                                cfg.borderColor
+                              )}>
+                                <Image src={src} alt={label} width={28} height={28} unoptimized className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <span key={key} className="text-sm leading-none w-7 text-center">{cfg.emoji}</span>
+                            );
+                          })}
+                        </div>
+                        {/* Action text — the human-readable description */}
+                        <span className={cn("text-[11px] font-medium flex-1 min-w-0", cfg.textColor)}>
+                          {step.action}
+                        </span>
                       </div>
                       {step.note && (
-                        <p className="text-[10px] text-white/35 leading-relaxed">{step.note}</p>
+                        <p className="text-[10px] text-white/35 leading-relaxed mt-0.5">{step.note}</p>
                       )}
                     </div>
                   ) : (
