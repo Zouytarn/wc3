@@ -151,6 +151,159 @@ export const BUILDING_ICONS: Record<string, string> = {
   corrosive_breath: BASE + "BTNCorrosiveBreath.png",
 };
 
+// ── Race metadata ──────────────────────────────────────────────────────────
+
+export type IconRace = "human" | "orc" | "nightelf" | "undead" | "neutral";
+
+/**
+ * Maps every icon key to its race affiliation.
+ * "neutral" = available to all / race-agnostic (workers, research, tavern).
+ */
+export const ICON_RACES: Record<string, IconRace> = {
+  // Workers (neutral — each race has their own but appear in every build)
+  peon: "neutral", peasant: "neutral", acolyte: "neutral",
+
+  // Human buildings
+  farm: "human", barracks: "human", human_barracks: "human",
+  blacksmith: "human", lumber_mill: "human", arcane_sanctum: "human",
+  workshop: "human", gryphon_aviary: "human", altar_of_kings: "human",
+  keep: "human", castle: "human", town_hall: "human",
+
+  // Human units
+  militia: "human", footman: "human", rifleman: "human", knight: "human",
+  sorceress: "human", priest: "human", spell_breaker: "human",
+  mortar_team: "human", flying_machine: "human", gryphon_rider: "human",
+  dragon_hawk: "human",
+
+  // Human heroes
+  archmage: "human", paladin: "human", mountain_king: "human", blood_mage: "human",
+
+  // Orc buildings
+  burrow: "orc", great_hall: "orc", stronghold: "orc", fortress: "orc",
+  voodoo_lounge: "orc", spirit_lodge: "orc", beastiary: "orc",
+  tauren_totem: "orc", altar_of_storms: "orc",
+
+  // Orc units
+  grunt: "orc", headhunter: "orc", shaman: "orc", witch_doctor: "orc",
+  raider: "orc", catapult: "orc", kodo_beast: "orc", spirit_walker: "orc",
+  tauren: "orc", wind_rider: "orc", batrider: "orc",
+
+  // Orc heroes
+  blademaster: "orc", far_seer: "orc", tauren_chieftain: "orc", shadow_hunter: "orc",
+
+  // Night Elf buildings
+  moon_well: "nightelf", ancient_of_war: "nightelf", ancient_of_lore: "nightelf",
+  ancient_of_wind: "nightelf", hunters_hall: "nightelf", elven_farm: "nightelf",
+  tree_of_life: "nightelf", tree_of_ages: "nightelf", tree_of_eternity: "nightelf",
+  altar_of_elders: "nightelf",
+
+  // Night Elf units
+  wisp: "nightelf", archer: "nightelf", huntress: "nightelf", dryad: "nightelf",
+  druid_of_the_talon: "nightelf", druid_of_the_claw: "nightelf",
+  mountain_giant: "nightelf", hippogryph: "nightelf", faerie_dragon: "nightelf",
+  chimaera: "nightelf", glaive_thrower: "nightelf",
+
+  // Night Elf heroes
+  demon_hunter: "nightelf", keeper_of_the_grove: "nightelf",
+  priestess_of_the_moon: "nightelf", warden: "nightelf",
+
+  // Undead buildings
+  crypt: "undead", necropolis: "undead", graveyard: "undead",
+  haunted_mine: "undead", slaughterhouse: "undead",
+  temple_of_the_damned: "undead", ziggurat: "undead",
+  spirit_tower: "undead", hall_of_the_dead: "undead", altar_of_darkness: "undead",
+
+  // Undead units
+  ghoul: "undead", crypt_fiend: "undead", necromancer: "undead",
+  banshee: "undead", abomination: "undead", gargoyle: "undead",
+  shade: "undead", meat_wagon: "undead", obsidian_statue: "undead",
+  frost_wyrm: "undead", destroyer: "undead",
+
+  // Undead heroes
+  death_knight: "undead", lich: "undead", dread_lord: "undead", crypt_lord: "undead",
+
+  // Neutral
+  tavern: "neutral",
+  defend: "neutral", bloodlust: "neutral", berserker_upgrade: "neutral",
+  purge: "neutral", flak_cannons: "neutral", long_rifle: "neutral",
+  storm_hammers: "neutral", corrosive_breath: "neutral",
+};
+
+// ── Canonical display labels ────────────────────────────────────────────────
+
+/** Overrides for keys where the auto-capitalized version isn't ideal */
+const LABEL_OVERRIDES: Record<string, string> = {
+  human_barracks:        "Barracks",
+  ancient_of_war:        "Ancient of War",
+  ancient_of_lore:       "Ancient of Lore",
+  ancient_of_wind:       "Ancient of Wind",
+  altar_of_kings:        "Altar of Kings",
+  altar_of_storms:       "Altar of Storms",
+  altar_of_elders:       "Altar of Elders",
+  altar_of_darkness:     "Altar of Darkness",
+  tree_of_life:          "Tree of Life",
+  tree_of_ages:          "Tree of Ages",
+  tree_of_eternity:      "Tree of Eternity",
+  hall_of_the_dead:      "Hall of the Dead",
+  temple_of_the_damned:  "Temple of the Damned",
+  hunters_hall:          "Hunters' Hall",
+  tauren_chieftain:      "Tauren Chieftain",
+  keeper_of_the_grove:   "Keeper of the Grove",
+  priestess_of_the_moon: "Priestess of the Moon",
+  demon_hunter:          "Demon Hunter",
+  shadow_hunter:         "Shadow Hunter",
+  blood_mage:            "Blood Mage",
+  mountain_king:         "Mountain King",
+  death_knight:          "Death Knight",
+  dread_lord:            "Dread Lord",
+  crypt_lord:            "Crypt Lord",
+  crypt_fiend:           "Crypt Fiend",
+  far_seer:              "Far Seer",
+  great_hall:            "Great Hall",
+  voodoo_lounge:         "Voodoo Lounge",
+  spirit_lodge:          "Spirit Lodge",
+  tauren_totem:          "Tauren Totem",
+  moon_well:             "Moon Well",
+  lumber_mill:           "Lumber Mill",
+  arcane_sanctum:        "Arcane Sanctum",
+  gryphon_aviary:        "Gryphon Aviary",
+  gryphon_rider:         "Gryphon Rider",
+  spell_breaker:         "Spell Breaker",
+  mortar_team:           "Mortar Team",
+  flying_machine:        "Flying Machine",
+  dragon_hawk:           "Dragon Hawk",
+  spirit_walker:         "Spirit Walker",
+  wind_rider:            "Wind Rider",
+  kodo_beast:            "Kodo Beast",
+  faerie_dragon:         "Faerie Dragon",
+  druid_of_the_talon:    "Druid of the Talon",
+  druid_of_the_claw:     "Druid of the Claw",
+  mountain_giant:        "Mountain Giant",
+  glaive_thrower:        "Glaive Thrower",
+  haunted_mine:          "Haunted Mine",
+  obsidian_statue:       "Obsidian Statue",
+  frost_wyrm:            "Frost Wyrm",
+  meat_wagon:            "Meat Wagon",
+  berserker_upgrade:     "Berserker Upgrade",
+  flak_cannons:          "Flak Cannons",
+  long_rifle:            "Long Rifle",
+  storm_hammers:         "Storm Hammers",
+  corrosive_breath:      "Corrosive Breath",
+  elven_farm:            "Elven Farm",
+  town_hall:             "Town Hall",
+};
+
+/** Returns the canonical display label for an icon key, e.g. "altar_of_storms" → "Altar of Storms" */
+export function iconKeyToLabel(key: string): string {
+  if (LABEL_OVERRIDES[key]) return LABEL_OVERRIDES[key];
+  return key
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+// ── All icons combined ─────────────────────────────────────────────────────
+
 /**
  * All icon keys combined — used for smart suggestion matching.
  * Order matters: BUILDING first so buildings score higher for action text.
@@ -163,33 +316,36 @@ const ALL_ICONS: Array<{ key: string; path: string }> = [
 
 /** Common shorthand aliases → canonical icon keys */
 const ALIASES: Record<string, string[]> = {
-  altar:   ["altar_of_kings", "altar_of_storms", "altar_of_elders", "altar_of_darkness"],
-  am:      ["archmage"],
-  dk:      ["death_knight"],
-  tc:      ["tauren_chieftain"],
-  bm:      ["blademaster"],
-  fs:      ["far_seer"],
-  sh:      ["shadow_hunter"],
-  dh:      ["demon_hunter"],
-  kotg:    ["keeper_of_the_grove"],
-  potm:    ["priestess_of_the_moon"],
-  dl:      ["dread_lord"],
-  gryphon: ["gryphon_rider"],
-  archers: ["archer"],
-  grunts:  ["grunt"],
-  barrack: ["barracks", "human_barracks"],
-  moonwell:["moon_well"],
-  zigg:    ["ziggurat"],
+  altar:    ["altar_of_kings", "altar_of_storms", "altar_of_elders", "altar_of_darkness"],
+  am:       ["archmage"],
+  dk:       ["death_knight"],
+  tc:       ["tauren_chieftain"],
+  bm:       ["blademaster"],
+  fs:       ["far_seer"],
+  sh:       ["shadow_hunter"],
+  dh:       ["demon_hunter"],
+  kotg:     ["keeper_of_the_grove"],
+  potm:     ["priestess_of_the_moon"],
+  dl:       ["dread_lord"],
+  gryphon:  ["gryphon_rider"],
+  archers:  ["archer"],
+  grunts:   ["grunt"],
+  barrack:  ["barracks", "human_barracks"],
+  moonwell: ["moon_well"],
+  zigg:     ["ziggurat"],
+  hh:       ["headhunter"],
 };
 
 /**
  * Analyzes free-form action text and returns the best-matching icon keys in order.
- * Used by the build order creator for smart auto-suggestions.
+ * Optionally filtered by race — icons from other races are excluded.
  */
-export function suggestIconKeys(actionText: string): Array<{ key: string; path: string }> {
+export function suggestIconKeys(
+  actionText: string,
+  myRace?: string,
+): Array<{ key: string; path: string }> {
   if (!actionText.trim()) return [];
 
-  // Normalize: lowercase, replace delimiters with spaces, keep only a-z0-9 and spaces
   const normalized = actionText
     .toLowerCase()
     .replace(/[→×x×+:]/g, " ")
@@ -200,34 +356,38 @@ export function suggestIconKeys(actionText: string): Array<{ key: string; path: 
   const words = normalized.split(" ").filter((w) => w.length > 1);
   if (words.length === 0) return [];
 
-  // Expand aliases: e.g. "altar" → also consider "altar_of_kings" etc.
   const expandedWords = new Set(words);
   for (const word of words) {
     const aliasExpansions = ALIASES[word];
     if (aliasExpansions) aliasExpansions.forEach((a) => expandedWords.add(a));
   }
 
-  // Score each icon key
-  const scored = ALL_ICONS.map(({ key, path }) => {
-    const keyParts = key.split("_"); // ["far", "seer"]
-    let score = 0;
+  const scored = ALL_ICONS
+    // Race filter: remove icons that belong to a different race
+    .filter(({ key }) => {
+      if (!myRace) return true;
+      const iconRace = ICON_RACES[key];
+      if (!iconRace || iconRace === "neutral") return true;
+      return iconRace === myRace;
+    })
+    .map(({ key, path }) => {
+      const keyParts = key.split("_");
+      let score = 0;
 
-    for (const word of expandedWords) {
-      const wordParts = word.split("_");
-      for (const kp of keyParts) {
-        for (const wp of wordParts) {
-          if (kp === wp) { score += 4; break; }                  // exact match
-          if (kp.startsWith(wp) && wp.length >= 3) { score += 2; break; } // prefix
-          if (wp.startsWith(kp) && kp.length >= 3) { score += 1; break; } // suffix
+      for (const word of expandedWords) {
+        const wordParts = word.split("_");
+        for (const kp of keyParts) {
+          for (const wp of wordParts) {
+            if (kp === wp) { score += 4; break; }
+            if (kp.startsWith(wp) && wp.length >= 3) { score += 2; break; }
+            if (wp.startsWith(kp) && kp.length >= 3) { score += 1; break; }
+          }
         }
       }
-    }
 
-    // Bonus: if the full key appears verbatim in normalized text
-    if (normalized.replace(/ /g, "_").includes(key)) score += 5;
-
-    return { key, path, score };
-  });
+      if (normalized.replace(/ /g, "_").includes(key)) score += 5;
+      return { key, path, score };
+    });
 
   return scored
     .filter((s) => s.score > 0)

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { BuildOrder, BuildStep, BuildStepType, BuildStyle } from "@/data/build-orders";
 import { STEP_TYPE_CONFIG } from "@/data/build-orders";
-import { suggestIconKeys, getBuildStepIcon } from "@/data/icons";
+import { suggestIconKeys, getBuildStepIcon, iconKeyToLabel } from "@/data/icons";
 import type { Race } from "@/data/units";
 import BuildOrderTimeline from "@/components/BuildOrderTimeline";
 import {
@@ -87,30 +87,44 @@ function RacePicker({
   );
 }
 
+/**
+ * Returns true when the action text looks like a search/incomplete word
+ * rather than a full action description. Used to decide whether clicking
+ * an icon should auto-replace the action text with the canonical label.
+ */
+function looksLikeSearchQuery(action: string): boolean {
+  const stripped = action.trim();
+  // Short, no structural markers → treat as search query
+  return stripped.length <= 28 && !/[→+×]/i.test(stripped);
+}
+
 function IconSuggestions({
   action,
   selected,
+  myRace,
   onSelect,
 }: {
   action: string;
   selected: string | undefined;
-  onSelect: (key: string | undefined) => void;
+  myRace?: string;
+  onSelect: (key: string | undefined, canonicalLabel: string | null) => void;
 }) {
-  const suggestions = suggestIconKeys(action);
+  const suggestions = suggestIconKeys(action, myRace);
   if (suggestions.length === 0 && !selected) return null;
 
   const selectedPath = selected ? getBuildStepIcon(selected) : undefined;
+  const selectedLabel = selected ? iconKeyToLabel(selected) : undefined;
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2">
         <label className="text-[10px] text-white/30 uppercase tracking-wider">Icon</label>
         {selected && (
-          <span className="text-[10px] text-white/30 font-mono">{selected}</span>
+          <span className="text-[10px] text-white/40">{selectedLabel}</span>
         )}
         {selected && (
           <button
-            onClick={() => onSelect(undefined)}
+            onClick={() => onSelect(undefined, null)}
             className="text-[10px] text-white/25 hover:text-red-400 transition-colors ml-auto"
           >
             clear
@@ -118,14 +132,10 @@ function IconSuggestions({
         )}
       </div>
 
-      {/* Currently selected icon (large) */}
+      {/* Currently selected icon (large preview) */}
       {selectedPath && (
         <div className="flex items-center gap-2 pb-1">
-          <img
-            src={selectedPath}
-            alt={selected}
-            className="w-10 h-10 object-cover rounded-lg border border-amber-500/40"
-          />
+          <img src={selectedPath} alt={selected} className="w-10 h-10 object-cover rounded-lg border border-amber-500/40" />
           <span className="text-xs text-amber-300/70 font-medium">Selected</span>
         </div>
       )}
@@ -133,29 +143,34 @@ function IconSuggestions({
       {/* Suggestions grid */}
       {suggestions.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {suggestions.map(({ key, path }) => (
-            <button
-              key={key}
-              onClick={() => onSelect(selected === key ? undefined : key)}
-              title={key.replace(/_/g, " ")}
-              className={cn(
-                "group relative rounded-lg border p-0.5 transition-all",
-                selected === key
-                  ? "border-amber-500/60 bg-amber-500/10"
-                  : "border-white/[0.08] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.07]"
-              )}
-            >
-              <img
-                src={path}
-                alt={key}
-                className="w-9 h-9 object-cover rounded-md"
-              />
-              {/* Tooltip label */}
-              <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-white/50 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/70 px-1 rounded">
-                {key.replace(/_/g, " ")}
-              </span>
-            </button>
-          ))}
+          {suggestions.map(({ key, path }) => {
+            const label = iconKeyToLabel(key);
+            return (
+              <button
+                key={key}
+                onClick={() => {
+                  if (selected === key) {
+                    onSelect(undefined, null);
+                  } else {
+                    // Pass canonical label so action text can be auto-corrected
+                    onSelect(key, looksLikeSearchQuery(action) ? label : null);
+                  }
+                }}
+                title={label}
+                className={cn(
+                  "group relative rounded-lg border p-0.5 transition-all",
+                  selected === key
+                    ? "border-amber-500/60 bg-amber-500/10"
+                    : "border-white/[0.08] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.07]"
+                )}
+              >
+                <img src={path} alt={label} className="w-9 h-9 object-cover rounded-md" />
+                <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-white/50 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/80 px-1 rounded z-10">
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -170,6 +185,7 @@ function StepRow({
   step,
   index,
   total,
+  myRace,
   onUpdate,
   onDelete,
   onMove,
@@ -177,6 +193,7 @@ function StepRow({
   step: BuildStep;
   index: number;
   total: number;
+  myRace: string;
   onUpdate: (s: BuildStep) => void;
   onDelete: () => void;
   onMove: (dir: -1 | 1) => void;
@@ -262,11 +279,15 @@ function StepRow({
             />
           </div>
 
-          {/* Smart icon picker — auto-matches action text */}
+          {/* Smart icon picker — auto-matches action text, race-filtered */}
           <IconSuggestions
             action={step.action}
             selected={step.iconKey}
-            onSelect={(key) => onUpdate({ ...step, iconKey: key })}
+            myRace={myRace}
+            onSelect={(key, canonicalLabel) => {
+              const newAction = canonicalLabel ?? step.action;
+              onUpdate({ ...step, iconKey: key, action: newAction });
+            }}
           />
 
           <div className="grid grid-cols-2 gap-2">
@@ -560,6 +581,7 @@ export default function BuilderEditor() {
                     step={step}
                     index={i}
                     total={build.steps.length}
+                    myRace={build.myRace}
                     onUpdate={(s) => updateStep(i, s)}
                     onDelete={() => deleteStep(i)}
                     onMove={(dir) => moveStep(i, dir)}
