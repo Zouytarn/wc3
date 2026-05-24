@@ -18,8 +18,10 @@ export interface BuildStep {
   action: string;
   note?: string;
   priority: "critical" | "normal" | "optional";
-  /** Icon key — matches a key in UNIT_ICONS or HERO_ICONS (see data/icons.ts) */
+  /** Single icon key — matches a key in BUILDING_ICONS, UNIT_ICONS, or HERO_ICONS */
   iconKey?: string;
+  /** Multiple icon keys for compound steps (e.g. "Farm + Barracks"). Overrides iconKey. */
+  iconKeys?: string[];
 }
 
 export interface BuildOrder {
@@ -57,9 +59,9 @@ const HUMAN_VS_HUMAN: BuildOrder = {
   steps: [
     { time: "0:00", type: "worker",   action: "Queue 3 Peasants",                      note: "Start with 5 peasants working",         priority: "critical",  iconKey: "peasant" },
     { time: "0:15", type: "worker",   action: "Send 4 to gold, 1 to lumber",            priority: "critical",  iconKey: "peasant" },
-    { time: "0:30", type: "building", action: "Build Farm × 2 + Barracks",              priority: "critical",  iconKey: "farm" },
+    { time: "0:30", type: "building", action: "Build Farm × 2 + Barracks",              priority: "critical",  iconKeys: ["farm", "human_barracks"] },
     { time: "1:00", type: "unit",     action: "Train Footman × 2",                      priority: "critical",  iconKey: "footman" },
-    { time: "1:30", type: "hero",     action: "Altar of Kings → Archmage",              priority: "critical",  iconKey: "archmage" },
+    { time: "1:30", type: "hero",     action: "Altar of Kings → Archmage",              priority: "critical",  iconKeys: ["altar_of_kings", "archmage"] },
     { time: "2:00", type: "building", action: "Build Lumber Mill",                      priority: "normal",    iconKey: "lumber_mill" },
     { time: "2:45", type: "army",     action: "Creep nearest camp with Archmage",       note: "Get hero XP early",                    priority: "critical" },
     { time: "3:30", type: "research", action: "Blacksmith → Defend upgrade",            priority: "normal",    iconKey: "defend" },
@@ -93,7 +95,7 @@ const HUMAN_VS_ORC: BuildOrder = {
   keyWeaknesses: ["Vulnerable to early Grunt rush", "Headhunters outrange Riflemen"],
   steps: [
     { time: "0:00", type: "worker",   action: "Queue 3 Peasants",                       priority: "critical",  iconKey: "peasant" },
-    { time: "0:30", type: "building", action: "Build Farm × 2 + Barracks",               priority: "critical",  iconKey: "farm" },
+    { time: "0:30", type: "building", action: "Build Farm × 2 + Barracks",               priority: "critical",  iconKeys: ["farm", "human_barracks"] },
     { time: "1:00", type: "unit",     action: "Train Footman × 1 — hold early Grunts",   priority: "critical",  iconKey: "footman" },
     { time: "1:30", type: "hero",     action: "Altar → Archmage",                        priority: "critical",  iconKey: "archmage" },
     { time: "2:00", type: "building", action: "Build Lumber Mill",                        priority: "critical",  iconKey: "lumber_mill" },
@@ -130,10 +132,10 @@ const HUMAN_VS_NIGHTELF: BuildOrder = {
   keyWeaknesses: ["Dryads are Spell Immune (hard to handle)", "Chimaera magic wrecks Knights"],
   steps: [
     { time: "0:00", type: "worker",   action: "Queue 3 Peasants",                          priority: "critical",  iconKey: "peasant" },
-    { time: "0:30", type: "building", action: "Farm × 2 + Barracks",                        priority: "critical",  iconKey: "farm" },
+    { time: "0:30", type: "building", action: "Farm × 2 + Barracks",                        priority: "critical",  iconKeys: ["farm", "human_barracks"] },
     { time: "1:00", type: "unit",     action: "Footman × 2 — defend early Archer harass",   priority: "critical",  iconKey: "footman" },
     { time: "1:30", type: "hero",     action: "Altar → Archmage",                           priority: "critical",  iconKey: "archmage" },
-    { time: "2:00", type: "building", action: "Lumber Mill + Blacksmith",                    priority: "normal",    iconKey: "blacksmith" },
+    { time: "2:00", type: "building", action: "Lumber Mill + Blacksmith",                    priority: "normal",    iconKeys: ["lumber_mill", "blacksmith"] },
     { time: "3:00", type: "unit",     action: "Arcane Sanctum → Spell Breaker × 2",         note: "KEY unit vs NE",                       priority: "critical",  iconKey: "spell_breaker" },
     { time: "3:30", type: "hero",     action: "Archmage: L1 Blizzard, L2 Brilliance Aura",  priority: "critical",  iconKey: "archmage" },
     { time: "4:00", type: "research", action: "Spell Breaker — Control Magic upgrade",       priority: "normal" },
@@ -166,7 +168,7 @@ const HUMAN_VS_UNDEAD: BuildOrder = {
   keyWeaknesses: ["Banshee Possess steals Knights/Gryphons", "Disease Cloud counters Priest healing"],
   steps: [
     { time: "0:00", type: "worker",   action: "Queue 3 Peasants",                              priority: "critical",  iconKey: "peasant" },
-    { time: "0:30", type: "building", action: "Farm × 2 + Barracks",                            priority: "critical",  iconKey: "farm" },
+    { time: "0:30", type: "building", action: "Farm × 2 + Barracks",                            priority: "critical",  iconKeys: ["farm", "human_barracks"] },
     { time: "1:00", type: "unit",     action: "Footman × 2",                                    priority: "critical",  iconKey: "footman" },
     { time: "1:30", type: "hero",     action: "Altar → Paladin",                                note: "Holy Light does double damage vs Undead", priority: "critical", iconKey: "paladin" },
     { time: "2:30", type: "unit",     action: "Arcane Sanctum → Priest × 3",                   note: "Dispel skeletons + heal",              priority: "critical",  iconKey: "priest" },
@@ -203,7 +205,7 @@ const ORC_VS_HUMAN_BM: BuildOrder = {
   keyWeaknesses: ["Sorceress Slow hard-counters Bloodlust", "Riflemen pierce through Grunts", "Gryphons decimate Taurens"],
   steps: [
     { time: "0:00", type: "worker",   action: "Queue 3 Peons",                              priority: "critical",  iconKey: "peon" },
-    { time: "0:30", type: "building", action: "Burrow × 2 + Barracks",                      priority: "critical",  iconKey: "burrow" },
+    { time: "0:30", type: "building", action: "Burrow × 2 + Barracks",                      priority: "critical",  iconKeys: ["burrow", "barracks"] },
     { time: "1:00", type: "unit",     action: "Train Grunt × 2",                             priority: "critical",  iconKey: "grunt" },
     { time: "1:30", type: "hero",     action: "Altar of Storms → Blademaster",               priority: "critical",  iconKey: "blademaster" },
     { time: "2:00", type: "army",     action: "Wind Walk → harass Human Peasants",           note: "Kills workers, denies hero creeping",   priority: "critical" },
@@ -281,7 +283,7 @@ const ORC_VS_ORC: BuildOrder = {
   keyWeaknesses: ["Berserker upgrade leaves Headhunters temporarily vulnerable", "Gets outscaled by BM builds late"],
   steps: [
     { time: "0:00", type: "worker",   action: "Queue 3 Peons",                                  priority: "critical",  iconKey: "peon" },
-    { time: "0:30", type: "building", action: "Altar + Burrow × 2 + Barracks",                  priority: "critical",  iconKey: "burrow" },
+    { time: "0:30", type: "building", action: "Altar + Burrow × 2 + Barracks",                  priority: "critical",  iconKeys: ["altar_of_storms", "burrow", "barracks"] },
     { time: "1:00", type: "unit",     action: "Headhunter × 2",                                  priority: "critical",  iconKey: "headhunter" },
     { time: "1:30", type: "hero",     action: "Altar → Far Seer — Feral Spirit L1",              priority: "critical",  iconKey: "far_seer" },
     { time: "2:00", type: "army",     action: "Creep: FS wolves tank, Headhunters DPS",          priority: "critical" },
@@ -316,7 +318,7 @@ const ORC_VS_NIGHTELF_TC: BuildOrder = {
   keyWeaknesses: ["Faerie Dragon Mana Flare punishes casters", "Dryad spell immunity frustrating"],
   steps: [
     { time: "0:00", type: "worker",   action: "Queue 3 Peons",                                   priority: "critical",  iconKey: "peon" },
-    { time: "0:30", type: "building", action: "Burrow × 2 + Barracks",                           priority: "critical",  iconKey: "burrow" },
+    { time: "0:30", type: "building", action: "Burrow × 2 + Barracks",                           priority: "critical",  iconKeys: ["burrow", "barracks"] },
     { time: "1:00", type: "unit",     action: "Grunt × 2 (tank Archer damage well)",              priority: "critical",  iconKey: "grunt" },
     { time: "1:30", type: "hero",     action: "Altar → Tauren Chieftain",                         priority: "critical",  iconKey: "tauren_chieftain" },
     { time: "2:00", type: "hero",     action: "TC: Endurance Aura L1 — immediately boosts army",  priority: "critical",  iconKey: "tauren_chieftain" },
@@ -352,7 +354,7 @@ const ORC_VS_NIGHTELF_FS: BuildOrder = {
   keyWeaknesses: ["Headhunters vulnerable before reaching critical mass", "Can crumble vs Keeper of the Grove builds"],
   steps: [
     { time: "0:00", type: "worker",   action: "Queue 3 Peons",                                   priority: "critical",  iconKey: "peon" },
-    { time: "0:30", type: "building", action: "Altar + Burrow × 2 + Barracks",                   priority: "critical",  iconKey: "burrow" },
+    { time: "0:30", type: "building", action: "Altar + Burrow × 2 + Barracks",                   priority: "critical",  iconKeys: ["altar_of_storms", "burrow", "barracks"] },
     { time: "1:00", type: "unit",     action: "Headhunter × 2",                                   priority: "critical",  iconKey: "headhunter" },
     { time: "1:30", type: "hero",     action: "Altar → Far Seer — Feral Spirit L1",               priority: "critical",  iconKey: "far_seer" },
     { time: "2:00", type: "army",     action: "Creep carefully — keep HH back until 4+ units",    note: "NE DH/KotG can wipe small HH groups", priority: "critical" },
@@ -389,7 +391,7 @@ const ORC_VS_UNDEAD: BuildOrder = {
   keyWeaknesses: ["Necromancer skeletons scale hard", "Banshee Possession of Taurens is devastating"],
   steps: [
     { time: "0:00", type: "worker",   action: "Queue 3 Peons",                                    priority: "critical",  iconKey: "peon" },
-    { time: "0:30", type: "building", action: "Burrow × 2 + Barracks",                            priority: "critical",  iconKey: "burrow" },
+    { time: "0:30", type: "building", action: "Burrow × 2 + Barracks",                            priority: "critical",  iconKeys: ["burrow", "barracks"] },
     { time: "1:00", type: "unit",     action: "Grunt × 2",                                        priority: "critical",  iconKey: "grunt" },
     { time: "1:30", type: "hero",     action: "Altar → Blademaster",                               priority: "critical",  iconKey: "blademaster" },
     { time: "2:00", type: "army",     action: "Wind Walk → harass Undead Acolytes",               note: "Kills workers and denies expansion",   priority: "critical" },
@@ -426,7 +428,7 @@ const NIGHTELF_VS_HUMAN: BuildOrder = {
   keyWeaknesses: ["Spell Breakers counter Faerie Dragons", "Rifles shred Archer/Dryad light armor"],
   steps: [
     { time: "0:00", type: "worker",   action: "Train 3 Wisps",                                    priority: "critical",  iconKey: "wisp" },
-    { time: "0:30", type: "building", action: "Moon Well × 2 + Ancient of War",                   priority: "critical",  iconKey: "ancient_of_war" },
+    { time: "0:30", type: "building", action: "Moon Well × 2 + Ancient of War",                   priority: "critical",  iconKeys: ["moon_well", "ancient_of_war"] },
     { time: "1:00", type: "unit",     action: "Archer × 2",                                       priority: "critical",  iconKey: "archer" },
     { time: "1:30", type: "hero",     action: "Altar → Demon Hunter",                              priority: "critical",  iconKey: "demon_hunter" },
     { time: "2:00", type: "hero",     action: "DH: Mana Burn L1 — target Archmage immediately",   priority: "critical",  iconKey: "demon_hunter" },
@@ -462,7 +464,7 @@ const NIGHTELF_VS_ORC: BuildOrder = {
   keyWeaknesses: ["Orc physical pressure very strong", "Raider Ensnare grounds your flyers"],
   steps: [
     { time: "0:00", type: "worker",   action: "Train 3 Wisps",                                    priority: "critical",  iconKey: "wisp" },
-    { time: "0:30", type: "building", action: "Moon Well × 2 + Ancient of War",                   priority: "critical",  iconKey: "ancient_of_war" },
+    { time: "0:30", type: "building", action: "Moon Well × 2 + Ancient of War",                   priority: "critical",  iconKeys: ["moon_well", "ancient_of_war"] },
     { time: "1:00", type: "unit",     action: "Huntress × 2 (melee, hold Grunt pressure)",         priority: "critical",  iconKey: "huntress" },
     { time: "1:30", type: "hero",     action: "Altar → Keeper of the Grove",                       priority: "critical",  iconKey: "keeper_of_the_grove" },
     { time: "2:00", type: "hero",     action: "Keeper: Thorns Aura L1 (damages Grunts back)",      priority: "critical",  iconKey: "keeper_of_the_grove" },
@@ -498,7 +500,7 @@ const NIGHTELF_VS_NIGHTELF: BuildOrder = {
   keyWeaknesses: ["Mirror rewards better macro and micro", "Mountain Giant Taunt hard to counter"],
   steps: [
     { time: "0:00", type: "worker",   action: "Train 3 Wisps",                                    priority: "critical",  iconKey: "wisp" },
-    { time: "0:30", type: "building", action: "Moon Well × 2 + Ancient of War",                   priority: "critical",  iconKey: "ancient_of_war" },
+    { time: "0:30", type: "building", action: "Moon Well × 2 + Ancient of War",                   priority: "critical",  iconKeys: ["moon_well", "ancient_of_war"] },
     { time: "1:00", type: "unit",     action: "Archer × 2",                                       priority: "critical",  iconKey: "archer" },
     { time: "1:30", type: "hero",     action: "Altar → Demon Hunter",                              priority: "critical",  iconKey: "demon_hunter" },
     { time: "2:00", type: "hero",     action: "DH: Evasion or Mana Burn — creep fast",            priority: "critical",  iconKey: "demon_hunter" },
@@ -533,7 +535,7 @@ const NIGHTELF_VS_UNDEAD: BuildOrder = {
   keyWeaknesses: ["Gargoyle Stone Form annoying to handle", "Frost Wyrm requires anti-air"],
   steps: [
     { time: "0:00", type: "worker",   action: "Train 3 Wisps",                                    priority: "critical",  iconKey: "wisp" },
-    { time: "0:30", type: "building", action: "Moon Well × 2 + Ancient of War",                   priority: "critical",  iconKey: "ancient_of_war" },
+    { time: "0:30", type: "building", action: "Moon Well × 2 + Ancient of War",                   priority: "critical",  iconKeys: ["moon_well", "ancient_of_war"] },
     { time: "1:00", type: "unit",     action: "Archer × 2",                                       priority: "critical",  iconKey: "archer" },
     { time: "1:30", type: "hero",     action: "Altar → Priestess of the Moon",                    priority: "critical",  iconKey: "priestess_of_the_moon" },
     { time: "2:00", type: "hero",     action: "PotM: Trueshot Aura L1",                           priority: "critical",  iconKey: "priestess_of_the_moon" },
@@ -571,7 +573,7 @@ const UNDEAD_VS_HUMAN: BuildOrder = {
   keyWeaknesses: ["Paladin Holy Light damages Undead for bonus", "Priests Dispel skeleton armies instantly"],
   steps: [
     { time: "0:00", type: "worker",   action: "Train 3 Acolytes",                                 priority: "critical",  iconKey: "acolyte" },
-    { time: "0:30", type: "building", action: "Crypt (Ghoul production) + Altar",                  priority: "critical",  iconKey: "crypt" },
+    { time: "0:30", type: "building", action: "Crypt (Ghoul production) + Altar",                  priority: "critical",  iconKeys: ["crypt", "altar_of_darkness"] },
     { time: "1:00", type: "unit",     action: "Ghoul × 2",                                        priority: "critical",  iconKey: "ghoul" },
     { time: "1:30", type: "hero",     action: "Altar → Death Knight",                              priority: "critical",  iconKey: "death_knight" },
     { time: "2:00", type: "hero",     action: "DK: Unholy Aura L1 — regen on all nearby units",   priority: "critical",  iconKey: "death_knight" },
@@ -608,11 +610,11 @@ const UNDEAD_VS_ORC: BuildOrder = {
   keyWeaknesses: ["Orc physical pressure very early", "Shaman Purge removes Unholy Aura buff"],
   steps: [
     { time: "0:00", type: "worker",   action: "Train 3 Acolytes",                                 priority: "critical",  iconKey: "acolyte" },
-    { time: "0:30", type: "building", action: "Crypt + Altar + begin Necropolis upgrades",         priority: "critical",  iconKey: "crypt" },
+    { time: "0:30", type: "building", action: "Crypt + Altar + begin Necropolis upgrades",         priority: "critical",  iconKeys: ["crypt", "altar_of_darkness", "necropolis"] },
     { time: "1:00", type: "unit",     action: "Ghoul × 3 (fast, good vs early Grunt)",             priority: "critical",  iconKey: "ghoul" },
     { time: "1:30", type: "hero",     action: "Altar → Death Knight",                              priority: "critical",  iconKey: "death_knight" },
     { time: "2:00", type: "hero",     action: "DK Unholy Aura — Ghouls regen between fights",      priority: "critical",  iconKey: "death_knight" },
-    { time: "2:30", type: "building", action: "Graveyard + Ziggurat → upgrade to Spirit Towers",   priority: "critical",  iconKey: "ziggurat" },
+    { time: "2:30", type: "building", action: "Graveyard + Ziggurat → upgrade to Spirit Towers",   priority: "critical",  iconKeys: ["graveyard", "ziggurat"] },
     { time: "3:00", type: "hero",     action: "Second hero: Lich",                                 note: "Frost Nova slows Bloodlust Grunts",     priority: "critical",  iconKey: "lich" },
     { time: "3:30", type: "unit",     action: "Necromancer × 2",                                  note: "Skeletons from Orc Grunt corpses",      priority: "critical",  iconKey: "necromancer" },
     { time: "4:00", type: "unit",     action: "Abomination × 2 (tanky frontline, Disease Cloud)",  priority: "critical",  iconKey: "abomination" },
@@ -644,7 +646,7 @@ const UNDEAD_VS_NIGHTELF: BuildOrder = {
   keyWeaknesses: ["Dryad Abolish Magic destroys skeleton armies", "DH Mana Burn cripples casters"],
   steps: [
     { time: "0:00", type: "worker",   action: "Train 3 Acolytes",                                 priority: "critical",  iconKey: "acolyte" },
-    { time: "0:30", type: "building", action: "Crypt + Altar",                                     priority: "critical",  iconKey: "crypt" },
+    { time: "0:30", type: "building", action: "Crypt + Altar",                                     priority: "critical",  iconKeys: ["crypt", "altar_of_darkness"] },
     { time: "1:00", type: "unit",     action: "Ghoul × 2 (fast, good vs Archers/Huntresses)",      priority: "critical",  iconKey: "ghoul" },
     { time: "1:30", type: "hero",     action: "Altar → Dread Lord",                                priority: "critical",  iconKey: "dread_lord" },
     { time: "2:00", type: "hero",     action: "DL: Vampiric Aura L1 — Ghouls heal through fights", priority: "critical",  iconKey: "dread_lord" },
@@ -680,7 +682,7 @@ const UNDEAD_VS_UNDEAD: BuildOrder = {
   keyWeaknesses: ["Mirror rewards economy and creeping", "Both sides have similar sustain"],
   steps: [
     { time: "0:00", type: "worker",   action: "Train 3 Acolytes",                                 priority: "critical",  iconKey: "acolyte" },
-    { time: "0:30", type: "building", action: "Crypt + Altar + Haunted Gold Mine expansion",       priority: "critical",  iconKey: "crypt" },
+    { time: "0:30", type: "building", action: "Crypt + Altar + Haunted Gold Mine expansion",       priority: "critical",  iconKeys: ["crypt", "altar_of_darkness", "haunted_mine"] },
     { time: "1:00", type: "unit",     action: "Ghoul × 2, then switch to Crypt Fiend",            priority: "critical",  iconKey: "ghoul" },
     { time: "1:30", type: "hero",     action: "Altar → Lich (Frost Nova AoE vs Ghoul armies)",    priority: "critical",  iconKey: "lich" },
     { time: "2:00", type: "unit",     action: "Shade × 1 — permanent invisible scout",            note: "See enemy strategy + expansion",       priority: "critical",  iconKey: "shade" },

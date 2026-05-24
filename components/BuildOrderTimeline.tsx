@@ -165,24 +165,42 @@ export default function BuildOrderTimeline({ buildOrders }: BuildOrderTimelinePr
                   step.priority !== "critical" && "opacity-70"
                 )}>
                   <div className="flex items-center gap-2">
-                    {/* Icon: real PNG when available, emoji fallback */}
-                    {step.iconKey && getBuildStepIcon(step.iconKey) ? (
-                      <div className={cn(
-                        "w-8 h-8 flex-shrink-0 rounded-lg overflow-hidden border",
-                        cfg.borderColor
-                      )}>
-                        <Image
-                          src={getBuildStepIcon(step.iconKey)!}
-                          alt=""
-                          width={32}
-                          height={32}
-                          unoptimized
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-base leading-none flex-shrink-0 w-8 text-center">{cfg.emoji}</span>
-                    )}
+                    {/* Icons: render all keys from iconKeys[], fall back to single iconKey, then emoji */}
+                    {(() => {
+                      const keys = step.iconKeys ?? (step.iconKey ? [step.iconKey] : []);
+                      const validIcons = keys
+                        .map((k) => ({ k, src: getBuildStepIcon(k) }))
+                        .filter((x) => x.src);
+                      if (validIcons.length > 0) {
+                        return (
+                          <div className="flex gap-0.5 flex-shrink-0">
+                            {validIcons.map(({ k, src }) => (
+                              <div
+                                key={k}
+                                className={cn(
+                                  "w-7 h-7 rounded-md overflow-hidden border flex-shrink-0",
+                                  cfg.borderColor
+                                )}
+                              >
+                                <Image
+                                  src={src!}
+                                  alt=""
+                                  width={28}
+                                  height={28}
+                                  unoptimized
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return (
+                        <span className="text-base leading-none flex-shrink-0 w-7 text-center">
+                          {cfg.emoji}
+                        </span>
+                      );
+                    })()}
 
                     <div className="min-w-0 flex-1">
                       <p className={cn("text-[11px] font-medium leading-snug", cfg.textColor)}>
