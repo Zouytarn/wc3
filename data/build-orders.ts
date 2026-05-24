@@ -28,7 +28,7 @@ export interface BuildStep {
 export interface BuildOrder {
   id: string;
   myRace: Race;
-  enemyRace: Race;
+  enemyRace: Race | "general";
   name: string;
   style: BuildStyle;
   strategy: string;

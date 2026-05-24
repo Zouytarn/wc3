@@ -15,15 +15,26 @@ import {
   importFromJSON,
   generateBuildId,
 } from "@/lib/custom-builds";
+import {
+  supabase,
+  signInWithEmail,
+  signOut,
+  getCloudBuilds,
+  upsertCloudBuild,
+  deleteCloudBuild,
+} from "@/lib/supabase";
+import type { Session } from "@supabase/supabase-js";
 
 // ── Constants ─────────────────────────────────────────────────────────────
 
 const RACES: Race[] = ["human", "orc", "nightelf", "undead"];
-const RACE_LABELS: Record<Race, string> = {
+const ENEMY_RACES: (Race | "general")[] = ["human", "orc", "nightelf", "undead", "general"];
+const RACE_LABELS: Record<Race | "general", string> = {
   human: "Human",
   orc: "Orc",
   nightelf: "Night Elf",
   undead: "Undead",
+  general: "General",
 };
 const STYLES: BuildStyle[] = ["aggressive", "defensive", "economic", "standard"];
 
@@ -296,12 +307,22 @@ function StepRow({
 
 // ── RacePicker ────────────────────────────────────────────────────────────
 
-function RacePicker({ label, value, onChange }: { label: string; value: Race; onChange: (r: Race) => void }) {
+function RacePicker({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: Race | "general";
+  options: (Race | "general")[];
+  onChange: (r: Race | "general") => void;
+}) {
   return (
     <div className="space-y-1">
       <label className="text-[10px] text-white/40 uppercase tracking-wider">{label}</label>
       <div className="flex gap-1.5 flex-wrap">
-        {RACES.map((r) => (
+        {options.map((r) => (
           <button
             key={r}
             onClick={() => onChange(r)}
@@ -333,9 +354,62 @@ export default function BuilderEditor() {
   const [importText, setImportText] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
 
+  // Auth state
+  const [session, setSession] = useState<Session | null>(null);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authMsg, setAuthMsg] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [showAuthPanel, setShowAuthPanel] = useState(false);
+
+  // On mount: load local builds + subscribe to auth changes
   useEffect(() => {
     setSavedBuilds(loadCustomBuilds());
+
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null);
+      if (data.session) loadCloudBuilds(data.session.user.id);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+      if (s) loadCloudBuilds(s.user.id);
+    });
+
+    return () => subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadCloudBuilds(userId: string) {
+    const cloud = await getCloudBuilds(userId);
+    // Merge: cloud builds override any local version with same id
+    const local = loadCustomBuilds();
+    const merged = [...local];
+    for (const cb of cloud) {
+      if (!merged.find((b) => b.id === cb.id)) merged.push(cb);
+    }
+    setSavedBuilds(merged);
+  }
+
+  async function handleSignIn() {
+    if (!authEmail.trim()) return;
+    setAuthLoading(true);
+    const { error } = await signInWithEmail(authEmail.trim());
+    setAuthLoading(false);
+    if (error) {
+      setAuthMsg(`Error: ${error}`);
+    } else {
+      setAuthMsg("Magic link sent! Check your email and click the link to log in.");
+    }
+  }
+
+  async function handleSignOut() {
+    await signOut();
+    setSession(null);
+    setShowAuthPanel(false);
+    setSavedBuilds(loadCustomBuilds());
+  }
 
   function setField<K extends keyof BuildOrder>(key: K, val: BuildOrder[K]) {
     setBuild((b) => ({ ...b, [key]: val }));
@@ -428,17 +502,24 @@ export default function BuilderEditor() {
     setShowTextImport(false);
   }
 
-  function handleSave() {
-    const updated = { ...build, isCustom: true as const };
+  async function handleSave() {
+    const updated = { ...build, isCustom: true as const, authorId: session?.user.id };
     saveCustomBuild(updated);
     setSavedBuilds(loadCustomBuilds());
     setActiveBuildId(updated.id);
-    setSaveMsg("Saved!");
-    setTimeout(() => setSaveMsg(null), 2000);
+
+    if (session) {
+      const ok = await upsertCloudBuild(updated);
+      setSaveMsg(ok ? "Saved to cloud ☁" : "Saved locally (cloud error)");
+    } else {
+      setSaveMsg("Saved locally");
+    }
+    setTimeout(() => setSaveMsg(null), 2500);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     deleteCustomBuild(id);
+    if (session) await deleteCloudBuild(id);
     setSavedBuilds(loadCustomBuilds());
     if (activeBuildId === id) {
       setBuild(emptyBuild());
@@ -483,6 +564,34 @@ export default function BuilderEditor() {
             <p className="text-xs text-white/40 mt-0.5">Create, save and share your own WC3 build orders</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Auth button */}
+            {supabase && (
+              session ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-emerald-400/70 border border-emerald-500/20 bg-emerald-500/[0.07] px-2 py-1 rounded-lg">
+                    ☁ {session.user.email}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-[10px] text-white/25 hover:text-white/60 transition-colors px-2 py-1"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthPanel((v) => !v)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs border transition-colors",
+                    showAuthPanel
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                      : "bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80"
+                  )}
+                >
+                  Sign in to sync ☁
+                </button>
+              )
+            )}
             <button
               onClick={() => setShowPreview((v) => !v)}
               className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
@@ -521,6 +630,38 @@ export default function BuilderEditor() {
             </button>
           </div>
         </div>
+
+        {/* ── Auth panel (magic link) ──────────────────────────────────── */}
+        {showAuthPanel && !session && (
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4 space-y-3">
+            <p className="text-sm font-medium text-white/80">Sign in to save builds to the cloud</p>
+            <p className="text-xs text-white/40">
+              Enter your email — we&apos;ll send a magic link. No password needed.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSignIn()}
+                placeholder="you@example.com"
+                className="flex-1 bg-white/[0.06] border border-white/[0.10] rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-emerald-500/50 transition-colors"
+              />
+              <button
+                onClick={handleSignIn}
+                disabled={authLoading || !authEmail.trim()}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 transition-all"
+              >
+                {authLoading ? "Sending…" : "Send link"}
+              </button>
+            </div>
+            {authMsg && (
+              <p className={cn("text-xs", authMsg.startsWith("Error") ? "text-red-400" : "text-emerald-400")}>
+                {authMsg}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
@@ -574,8 +715,18 @@ export default function BuilderEditor() {
               <p className="text-[10px] text-white/30 uppercase tracking-wider">Build Details</p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <RacePicker label="Your Race" value={build.myRace} onChange={(r) => setField("myRace", r)} />
-                <RacePicker label="Enemy Race" value={build.enemyRace} onChange={(r) => setField("enemyRace", r)} />
+                <RacePicker
+                  label="Your Race"
+                  value={build.myRace}
+                  options={RACES}
+                  onChange={(r) => setField("myRace", r as Race)}
+                />
+                <RacePicker
+                  label="Enemy Race"
+                  value={build.enemyRace}
+                  options={ENEMY_RACES}
+                  onChange={(r) => setField("enemyRace", r)}
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
