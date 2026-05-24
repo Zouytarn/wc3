@@ -254,6 +254,14 @@ function StepRow({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && step.action.trim()) {
                   e.preventDefault();
+                  // Auto-apply best icon suggestion before moving to next step
+                  const suggestions = suggestIconKeys(step.action, myRace);
+                  const best = suggestions[0];
+                  if (best && !step.iconKey && looksLikeSearchQuery(step.action)) {
+                    const label = iconKeyToLabel(best.key);
+                    const type = iconKeyToStepType(best.key) as BuildStepType;
+                    onUpdate({ ...step, iconKey: best.key, action: label, type });
+                  }
                   onEnter();
                 }
               }}
