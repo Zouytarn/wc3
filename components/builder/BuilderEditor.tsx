@@ -17,12 +17,12 @@ import {
 } from "@/lib/custom-builds";
 import {
   supabase,
-  signInWithEmail,
   signOut,
   getCloudBuilds,
   upsertCloudBuild,
   deleteCloudBuild,
 } from "@/lib/supabase";
+import AuthModal from "@/components/builder/AuthModal";
 import type { Session } from "@supabase/supabase-js";
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -356,10 +356,8 @@ export default function BuilderEditor() {
 
   // Auth state
   const [session, setSession] = useState<Session | null>(null);
-  const [authEmail, setAuthEmail] = useState("");
-  const [authMsg, setAuthMsg] = useState<string | null>(null);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [showAuthPanel, setShowAuthPanel] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingSaveAfterAuth, setPendingSaveAfterAuth] = useState(false);
 
   // On mount: load local builds + subscribe to auth changes
   useEffect(() => {
@@ -392,23 +390,20 @@ export default function BuilderEditor() {
     setSavedBuilds(merged);
   }
 
-  async function handleSignIn() {
-    if (!authEmail.trim()) return;
-    setAuthLoading(true);
-    const { error } = await signInWithEmail(authEmail.trim());
-    setAuthLoading(false);
-    if (error) {
-      setAuthMsg(`Error: ${error}`);
-    } else {
-      setAuthMsg("Magic link sent! Check your email and click the link to log in.");
-    }
-  }
-
   async function handleSignOut() {
     await signOut();
     setSession(null);
-    setShowAuthPanel(false);
     setSavedBuilds(loadCustomBuilds());
+  }
+
+  /** Called by AuthModal when sign-in succeeds. */
+  function handleAuthSuccess() {
+    setShowAuthModal(false);
+    if (pendingSaveAfterAuth) {
+      setPendingSaveAfterAuth(false);
+      // session will be set via onAuthStateChange — trigger save after brief delay
+      setTimeout(() => handleSave(), 300);
+    }
   }
 
   function setField<K extends keyof BuildOrder>(key: K, val: BuildOrder[K]) {
@@ -503,6 +498,13 @@ export default function BuilderEditor() {
   }
 
   async function handleSave() {
+    // If Supabase is configured but user isn't logged in, prompt them first
+    if (supabase && !session) {
+      setPendingSaveAfterAuth(true);
+      setShowAuthModal(true);
+      return;
+    }
+
     const updated = { ...build, isCustom: true as const, authorId: session?.user.id };
     saveCustomBuild(updated);
     setSavedBuilds(loadCustomBuilds());
@@ -580,15 +582,10 @@ export default function BuilderEditor() {
                 </div>
               ) : (
                 <button
-                  onClick={() => setShowAuthPanel((v) => !v)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs border transition-colors",
-                    showAuthPanel
-                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                      : "bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80"
-                  )}
+                  onClick={() => { setPendingSaveAfterAuth(false); setShowAuthModal(true); }}
+                  className="px-3 py-1.5 rounded-xl text-xs border bg-white/[0.04] border-white/[0.10] text-white/50 hover:text-white/80 transition-colors"
                 >
-                  Sign in to sync ☁
+                  Sign in ☁
                 </button>
               )
             )}
@@ -630,38 +627,6 @@ export default function BuilderEditor() {
             </button>
           </div>
         </div>
-
-        {/* ── Auth panel (magic link) ──────────────────────────────────── */}
-        {showAuthPanel && !session && (
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4 space-y-3">
-            <p className="text-sm font-medium text-white/80">Sign in to save builds to the cloud</p>
-            <p className="text-xs text-white/40">
-              Enter your email — we&apos;ll send a magic link. No password needed.
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSignIn()}
-                placeholder="you@example.com"
-                className="flex-1 bg-white/[0.06] border border-white/[0.10] rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-emerald-500/50 transition-colors"
-              />
-              <button
-                onClick={handleSignIn}
-                disabled={authLoading || !authEmail.trim()}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 transition-all"
-              >
-                {authLoading ? "Sending…" : "Send link"}
-              </button>
-            </div>
-            {authMsg && (
-              <p className={cn("text-xs", authMsg.startsWith("Error") ? "text-red-400" : "text-emerald-400")}>
-                {authMsg}
-              </p>
-            )}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
@@ -851,6 +816,14 @@ export default function BuilderEditor() {
           </div>
         </div>
       </div>
+
+      {/* ── Auth modal ─────────────────────────────────────────────────── */}
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => { setShowAuthModal(false); setPendingSaveAfterAuth(false); }}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
     </div>
   );
 }
