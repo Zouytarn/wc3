@@ -29,17 +29,34 @@ export async function generateMetadata({ params }: { params: Promise<{ races: st
   const { races } = await params;
   const parsed = parseRaces(races);
   if (!parsed) return { title: "Not Found" };
-  return { title: `${RACE_LABELS[parsed.myRace]} vs ${RACE_LABELS[parsed.enemyRace]} — WC3 Strategy` };
+  return {
+    title: `${RACE_LABELS[parsed.myRace]} vs ${RACE_LABELS[parsed.enemyRace]} — WC3 Strategy`,
+  };
 }
 
-const RACE_HUE: Record<Race, string> = {
-  human:    "from-blue-500/[0.07]",
-  orc:      "from-red-500/[0.07]",
-  nightelf: "from-purple-500/[0.07]",
-  undead:   "from-slate-500/[0.05]",
-};
+function Hr() {
+  return <div className="h-px bg-white/[0.07]" />;
+}
 
-export default async function MatchupPage({ params }: { params: Promise<{ races: string }> }) {
+function SectionHead({ index, label }: { index: string; label: string }) {
+  return (
+    <div className="flex items-center gap-4 mb-6">
+      <span className="font-mono text-[10px] tracking-[0.25em] text-white/20 tabular-nums flex-shrink-0">
+        {index}
+      </span>
+      <div className="flex-1 h-px bg-white/[0.07]" />
+      <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-white/40 flex-shrink-0">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+export default async function MatchupPage({
+  params,
+}: {
+  params: Promise<{ races: string }>;
+}) {
   const { races } = await params;
   const parsed = parseRaces(races);
   if (!parsed) notFound();
@@ -50,80 +67,145 @@ export default async function MatchupPage({ params }: { params: Promise<{ races:
 
   return (
     <div className="min-h-screen">
-      {/* Banner */}
-      <div className={`border-b border-white/[0.06] bg-gradient-to-r ${RACE_HUE[myRace]} to-transparent`}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10">
-          <Link href="/" className="mb-4 inline-flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors">
+
+      {/* ── Banner ─────────────────────────────────────────────── */}
+      <div className="border-b border-white/[0.07]">
+        <div className="mx-auto max-w-5xl px-6 sm:px-10 py-10 sm:py-14">
+
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.15em] uppercase text-white/25 hover:text-white/55 transition-colors mb-8"
+          >
             ← Race Select
           </Link>
-          <div className="flex items-end gap-3 sm:gap-5 flex-wrap">
+
+          {/* Race matchup heading */}
+          <div className="flex items-end gap-4 sm:gap-6 flex-wrap mb-6">
             <div>
-              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1">Playing as</p>
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-white">{RACE_LABELS[myRace]}</h2>
+              <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/30 mb-2">
+                Playing as
+              </p>
+              <h1
+                style={{ fontFamily: "var(--font-cinzel)" }}
+                className="text-3xl sm:text-5xl font-black leading-none tracking-tight text-white"
+              >
+                {RACE_LABELS[myRace]}
+              </h1>
             </div>
-            <p className="text-xl sm:text-2xl text-white/20 mb-1">vs</p>
+
+            <p
+              style={{ fontFamily: "var(--font-cinzel)" }}
+              className="text-2xl sm:text-3xl text-white/20 mb-0.5"
+            >
+              vs
+            </p>
+
             <div>
-              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-1">Facing</p>
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-red-400">{RACE_LABELS[enemyRace]}</h2>
+              <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/30 mb-2">
+                Facing
+              </p>
+              <h2
+                style={{ fontFamily: "var(--font-cinzel)" }}
+                className="text-3xl sm:text-5xl font-black leading-none tracking-tight text-white/45"
+              >
+                {RACE_LABELS[enemyRace]}
+              </h2>
             </div>
           </div>
-          <p className="mt-3 text-sm text-white/45 max-w-2xl leading-relaxed hidden md:block">{result.generalAnalysis}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-400">
-              Top unit: {result.topUnits[0]?.name ?? "—"}
+
+          {/* Analysis text */}
+          <p className="text-xs text-white/35 max-w-2xl leading-relaxed hidden sm:block mb-5">
+            {result.generalAnalysis}
+          </p>
+
+          {/* Quick-facts strip */}
+          <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-[10px] tracking-[0.1em] uppercase">
+            <span>
+              <span className="text-white/20">Top unit </span>
+              <span className="text-emerald-400/80">{result.topUnits[0]?.name ?? "—"}</span>
             </span>
-            <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-400">
-              Hero: {result.topHeroes[0]?.name ?? "—"}
+            <span>
+              <span className="text-white/20">Hero </span>
+              <span className="text-amber-400/80">{result.topHeroes[0]?.name ?? "—"}</span>
             </span>
             {result.keyThreats[0] && (
-              <span className="rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-xs text-red-400 truncate max-w-[calc(100vw-3rem)]">
-                ⚠ {result.keyThreats[0].split("(")[0].trim()}
+              <span>
+                <span className="text-white/20">Threat </span>
+                <span className="text-red-400/70">
+                  {result.keyThreats[0].split("(")[0].trim()}
+                </span>
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-12 space-y-10 sm:space-y-16">
+      {/* ── Main content ───────────────────────────────────────── */}
+      <div className="mx-auto max-w-5xl px-6 sm:px-10 py-10 sm:py-14 space-y-14">
 
-        {/* Units + Heroes via CompositionAnalyzer */}
-        <CompositionAnalyzer myRace={myRace} enemyRace={enemyRace} defaultResult={result} />
-
-        {/* Build Order */}
-        <BuildOrderSection
-          officialBuilds={buildOrders}
-          myRace={myRace}
-          enemyRace={enemyRace}
-          raceLabel={RACE_LABELS[myRace]}
-          enemyLabel={RACE_LABELS[enemyRace]}
-        />
-
-        {/* Damage matrix */}
+        {/* 01 — Composition */}
         <section>
-          <div className="flex items-center gap-3 mb-4">
-            <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Damage vs Armor Matrix</p>
-          </div>
-          <p className="text-xs text-white/30 mb-4">Complete WC3 multiplier table. Hover a cell for details.</p>
+          <SectionHead index="01" label="Enemy Composition & Counter-Picks" />
+          <CompositionAnalyzer
+            myRace={myRace}
+            enemyRace={enemyRace}
+            defaultResult={result}
+          />
+        </section>
+
+        <Hr />
+
+        {/* 02 — Build Order */}
+        <section>
+          <SectionHead index="02" label={`Build Order · ${RACE_LABELS[myRace]} vs ${RACE_LABELS[enemyRace]}`} />
+          <BuildOrderSection
+            officialBuilds={buildOrders}
+            myRace={myRace}
+            enemyRace={enemyRace}
+            raceLabel={RACE_LABELS[myRace]}
+            enemyLabel={RACE_LABELS[enemyRace]}
+          />
+        </section>
+
+        <Hr />
+
+        {/* 03 — Damage matrix */}
+        <section>
+          <SectionHead index="03" label="Damage vs Armor Matrix" />
+          <p className="text-xs text-white/30 -mt-2 mb-5 leading-relaxed">
+            Full WC3 multiplier table. Hover a cell for details.
+          </p>
           <DamageMatrix />
         </section>
 
-        {/* Other matchups */}
+        <Hr />
+
+        {/* 04 — Other matchups */}
         <section>
-          <p className="text-[11px] font-medium tracking-widest uppercase text-white/40 mb-4">Other Matchups</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {(["human", "orc", "nightelf", "undead"] as Race[]).filter((e) => e !== enemyRace).map((enemy) => (
-              <Link
-                key={enemy}
-                href={`/matchup/${myRace}-vs-${enemy}`}
-                className="bg-white/[0.05] border border-white/[0.09] rounded-2xl p-4 text-center hover:bg-white/[0.08] transition-colors"
-              >
-                <p className="text-xs text-white/30 mb-0.5">vs</p>
-                <p className="font-semibold text-sm text-white">{RACE_LABELS[enemy]}</p>
-              </Link>
-            ))}
+          <SectionHead index="04" label="Other Matchups" />
+          <div className="grid grid-cols-3 gap-3">
+            {(["human", "orc", "nightelf", "undead"] as Race[])
+              .filter((e) => e !== enemyRace)
+              .map((enemy) => (
+                <Link
+                  key={enemy}
+                  href={`/matchup/${myRace}-vs-${enemy}`}
+                  className="group border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.14] transition-colors px-5 py-4"
+                >
+                  <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/20 mb-1.5 group-hover:text-white/35 transition-colors">
+                    vs
+                  </p>
+                  <p
+                    style={{ fontFamily: "var(--font-cinzel)" }}
+                    className="text-sm font-bold text-white/60 group-hover:text-white/90 transition-colors"
+                  >
+                    {RACE_LABELS[enemy]}
+                  </p>
+                </Link>
+              ))}
           </div>
         </section>
+
       </div>
     </div>
   );

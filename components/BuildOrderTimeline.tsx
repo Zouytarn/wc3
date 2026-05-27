@@ -33,16 +33,16 @@ export default function BuildOrderTimeline({ buildOrders }: BuildOrderTimelinePr
 
       {/* ── Build selector tabs ──────────────────────────────────── */}
       {buildOrders.length > 1 && (
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1 flex-wrap border-b border-white/[0.07]">
           {buildOrders.map((bo, i) => (
             <button
               key={bo.id}
               onClick={() => { setActiveIdx(i); setShowTips(false); }}
               className={cn(
-                "px-3 py-1.5 rounded-xl text-xs font-medium transition-all border",
+                "px-4 py-2 font-mono text-[10px] tracking-[0.12em] uppercase transition-colors border-b-2 -mb-px",
                 i === activeIdx
-                  ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
-                  : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.06]"
+                  ? "border-amber-500/60 text-amber-300/90 bg-amber-500/[0.06]"
+                  : "border-transparent text-white/30 hover:text-white/60 hover:bg-white/[0.03]"
               )}
             >
               {bo.name}
@@ -254,7 +254,7 @@ export default function BuildOrderTimeline({ buildOrders }: BuildOrderTimelinePr
         </button>
 
         {showTips && (
-          <div className="space-y-3 animate-in fade-in duration-150">
+          <div className="space-y-3">
             {/* Late game */}
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
               <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Late Game</p>

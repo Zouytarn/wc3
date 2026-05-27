@@ -15,7 +15,7 @@ export const UNIT_ICONS: Record<string, string> = {
   mortar_team:    BASE + "BTNMortarTeam.png",
   flying_machine: BASE + "BTNFlyingMachine.png",
   gryphon_rider:  BASE + "BTNGryphonRider.png",
-  dragon_hawk:    BASE + "BTNDragonHawk.png",
+  dragon_hawk:    BASE + "BTNDragonHawkRider.png",
 
   // Orc units
   grunt:         BASE + "BTNGrunt.png",
@@ -27,7 +27,7 @@ export const UNIT_ICONS: Record<string, string> = {
   kodo_beast:    BASE + "BTNRiderlessKodo.png",
   spirit_walker: BASE + "BTNSpiritWalker.png",
   tauren:        BASE + "BTNTauren.png",
-  wind_rider:    BASE + "BTNWyvern.png",
+  wind_rider:    BASE + "BTNWyvernRider.png",
   batrider:      BASE + "BTNTrollBatRider.png",
 
   // Night Elf units
@@ -443,11 +443,142 @@ export function iconKeyToStepType(key: string): string {
 }
 
 export function getUnitIcon(id: string): string {
-  return UNIT_ICONS[id] ?? "/icons/BTNFootman.png";
+  const path = UNIT_ICONS[id];
+  if (!path) return "/race-icons/BTNFootman.png";
+  const filename = path.split("/").pop() ?? "BTNFootman.png";
+  return `/race-icons/${filename}`;
 }
 
 export function getHeroIcon(id: string): string {
-  return HERO_ICONS[id] ?? "/icons/BTNHeroPaladin.png";
+  const path = HERO_ICONS[id];
+  if (!path) return "/race-icons/BTNHeroPaladin.png";
+  const filename = path.split("/").pop() ?? "BTNHeroPaladin.png";
+  return `/race-icons/${filename}`;
+}
+
+/**
+ * WC3 ability names whose icon filenames don't match the obvious PascalCase.
+ * These are prepended to the candidate list so they're tried first.
+ */
+const ABILITY_ICON_OVERRIDES: Record<string, string[]> = {
+  // ── Blademaster ────────────────────────────────────────────────
+  "wind walk":              ["WindWalkOn", "WindWalkOff"],
+  "bladestorm":             ["Whirlwind"],
+  // ── Demon Hunter ───────────────────────────────────────────────
+  "immolation":             ["ImmolationOn", "ImmolationOff"],
+  // ── Paladin ────────────────────────────────────────────────────
+  "divine shield":          ["DivineShieldOff"],
+  "devotion aura":          ["Devotion"],
+  "holy light":             ["HolyBolt"],
+  // ── Mountain King ──────────────────────────────────────────────
+  "avatar":                 ["AvatarOn", "Avatar"],
+  // ── Shadow Hunter ──────────────────────────────────────────────
+  "big bad voodoo":         ["BigBadVoodooSpell"],
+  // ── Far Seer ───────────────────────────────────────────────────
+  "feral spirit":           ["SpiritWolf"],
+  // ── Crypt Lord ─────────────────────────────────────────────────
+  "carrion beetles":        ["CarrionScarabsOn", "CarrionScarabs"],
+  // ── Warden ─────────────────────────────────────────────────────
+  "fan of knives":          ["FanOfKnives"],
+  "blink":                  ["Blink"],
+  "entangle":               ["EntanglingRoots"],
+  "vengeance":              ["VengeanceIncarnate"],
+  // ── Blood Mage ─────────────────────────────────────────────────
+  "siphon mana":            ["ManaDrain"],
+  // ── Case mismatches (filename has different capitalisation) ────
+  "shockwave":              ["ShockWave"],
+  "starfall":               ["StarFall"],
+  "phase shift":            ["PhaseShiftOn", "PhaseShift"],
+  "inner fire":             ["InnerFireOn", "InnerFire"],
+  "searing arrows":         ["SearingArrowsOn", "SearingArrows"],
+  "frost armor":            ["FrostArmorOn", "FrostArmor"],
+  // ── Aura abilities ─────────────────────────────────────────────
+  "brilliance aura":        ["Brilliance"],
+  "unholy aura":            ["UnholyAura"],
+  "trueshot aura":          ["TrueShot"],
+  "thorns aura":            ["Thorns"],
+  "vampiric aura":          ["VampiricAura"],
+  "command aura":           ["CommandAura"],
+  // ── Unit active/passive abilities ──────────────────────────────
+  "detonate":               ["WispSplode"],
+  "renew":                  ["WispHealOn"],
+  "cloud":                  ["CloudOfFog"],
+  "ethereal form":          ["EtherealFormOn", "EtherealForm"],
+  "abolish magic":          ["AbsorbMagic"],
+  "absorb mana":            ["AbsorbMagic"],
+  "elune's grace":          ["ElunesBlessing"],
+  "fragmentation shards":   ["FragmentationBombs"],
+};
+
+/** Resolve WC3 ability/upgrade icon paths from Liquipedia iconKey or name */
+export function getAbilityIconCandidates(iconKey?: string, name?: string): string[] {
+  const candidates: string[] = [];
+  const add = (base: string) => {
+    candidates.push(`/race-icons/BTN${base}.png`);
+    candidates.push(`/race-icons/BTN${base}-Reforged.png`);
+  };
+
+  if (iconKey) {
+    const raw = iconKey.replace(/\.(gif|png)$/i, "");
+    const stripped = raw
+      .replace(/^Wc3PAS/, "")
+      .replace(/^Wc3/, "")
+      .replace(/^PAS/, "")
+      .replace(/^BTN/, "");
+    add(stripped);
+    if (stripped !== raw) add(raw);
+    if (raw.startsWith("BTN")) {
+      candidates.unshift(`/race-icons/${raw}.png`);
+      candidates.unshift(`/race-icons/${raw}-Reforged.png`);
+    }
+  }
+
+  if (name) {
+    // Manual overrides — prepend so they're tried before auto-generated candidates
+    const overrides = ABILITY_ICON_OVERRIDES[name.toLowerCase()];
+    if (overrides) {
+      for (const o of overrides) {
+        candidates.unshift(`/race-icons/BTN${o}-Reforged.png`);
+        candidates.unshift(`/race-icons/BTN${o}.png`);
+      }
+    }
+
+    const pascal = (s: string) =>
+      s.split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join("");
+
+    const full = pascal(name);
+    add(full);
+
+    // Singular form: "Envenomed Spears" → "EnvenomedSpear"
+    if (full.endsWith("s")) add(full.slice(0, -1));
+
+    const words = name.trim().split(/\s+/);
+
+    // Drop last word: "Steel Ranged Weapons" → "SteelRanged"
+    if (words.length >= 2) {
+      const dropLast = pascal(words.slice(0, -1).join(" "));
+      add(dropLast);
+      if (dropLast.endsWith("s")) add(dropLast.slice(0, -1));
+    }
+
+    // Drop last two words: "Improved Steel Ranged Weapons" → "ImprovedSteel"
+    if (words.length >= 3) {
+      const dropLast2 = pascal(words.slice(0, -2).join(" "));
+      add(dropLast2);
+      if (dropLast2.endsWith("s")) add(dropLast2.slice(0, -1));
+    }
+
+    // Strip common WC3 suffix words and retry
+    const NOISE_WORDS = new Set(["weapons", "upgrade", "upgrades", "armor", "attack", "ability"]);
+    const filtered = words.filter((w) => !NOISE_WORDS.has(w.toLowerCase()));
+    if (filtered.length > 0 && filtered.length < words.length) {
+      const stripped = pascal(filtered.join(" "));
+      add(stripped);
+      if (stripped.endsWith("s")) add(stripped.slice(0, -1));
+    }
+  }
+
+  return [...new Set(candidates)];
 }
 
 /**

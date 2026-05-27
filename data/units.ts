@@ -1,980 +1,152 @@
-// Stats sourced from: https://gaming-tools.com/warcraft-3/units/ (updated May 2026)
 import type { AttackType, ArmorType } from "./damage-matrix";
+import liquipediaData from "./units-liquipedia.json";
+import gameplayData from "./units-gameplay.json";
 
 export type Race = "human" | "orc" | "nightelf" | "undead";
 export type UnitRole = "frontline" | "ranged" | "support" | "siege" | "caster" | "flying";
 export type UnitTier = 1 | 2 | 3;
 
+export interface UnitAbilityField {
+  label: string;
+  value: string;
+}
+
+export interface UnitResearchCost {
+  gold?: number;
+  lumber?: number;
+  time?: number;
+}
+
+export interface UnitAbility {
+  kind: "ability";
+  name: string;
+  iconKey?: string;
+  castType?: string;
+  targetType?: string;
+  description: string;
+  hotkey?: string;
+  fields: UnitAbilityField[];
+  researchedAt?: string;
+  researchCost?: UnitResearchCost;
+}
+
+export interface UnitUpgradeLevel {
+  name: string;
+  iconKey?: string;
+  gold?: number;
+  lumber?: number;
+  researchTime?: number;
+  requires?: string;
+  effects: UnitAbilityField[];
+}
+
+export interface UnitUpgrade {
+  kind: "upgrade";
+  name: string;
+  iconKey?: string;
+  description: string;
+  hotkey?: string;
+  researchedAt?: string;
+  levels: UnitUpgradeLevel[];
+}
+
 export interface Unit {
   id: string;
   name: string;
   race: Race;
-  tier: UnitTier;
   role: UnitRole;
+  tier: UnitTier;
   attackType: AttackType;
   armorType: ArmorType;
   goldCost: number;
   lumberCost: number;
+  buildTime?: number;
   foodCost: number;
   hp: number;
+  hpRegen?: string;
+  armor: number;
+  armorUpgraded?: number;
+  level?: number;
+  daySight?: number;
+  nightSight?: number;
+  speed: number;
+  speedUpgraded?: number;
+  turnRate?: number;
+  moveType?: string;
+  damageMin: number;
+  damageMax: number;
+  damageUpgradedMin?: number;
+  damageUpgradedMax?: number;
+  /** Legacy display string — avg base damage */
   damage: string;
   dps: number;
-  speed: string;
-  range: string;
+  dpsUpgraded?: number;
+  cooldown: number;
+  cooldownUpgraded?: number;
+  range: number | string;
+  weaponType?: string;
+  targets?: string[];
+  builtFrom?: string;
+  requires?: string;
+  lore?: string;
+  abilities: UnitAbility[];
+  upgrades: UnitUpgrade[];
+  /** Strategy overlay — not from Liquipedia */
   special: string[];
   counters: string[];
   weakTo: string[];
   description: string;
 }
 
-const HUMAN_UNITS: Unit[] = [
-  {
-    id: "militia",
-    name: "Militia",
-    race: "human",
-    tier: 1,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "heavy",
-    goldCost: 0,
-    lumberCost: 0,
-    foodCost: 2,
-    hp: 220,
-    damage: "12.5",
-    dps: 10,
-    speed: "medium",
-    range: "melee",
-    special: ["Temporary (peasant conversion)", "Call to Arms"],
-    counters: ["ghoul"],
-    weakTo: ["headhunter", "crypt_fiend"],
-    description: "Emergency soldiers created from Peasants via Call to Arms. Good early defense.",
-  },
-  {
-    id: "footman",
-    name: "Footman",
-    race: "human",
-    tier: 1,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "heavy",
-    goldCost: 135,
-    lumberCost: 0,
-    foodCost: 2,
-    hp: 420,
-    damage: "12.5",
-    dps: 11,
-    speed: "medium",
-    range: "melee",
-    special: ["Defend (reduces piercing damage by 50%)", "Resistant Skin (upgradeable)"],
-    counters: ["ghoul", "grunt", "skeleton"],
-    weakTo: ["sorceress", "necromancer"],
-    description: "Core Human frontline. Defend ability halves piercing damage — very effective when Defended vs Archers/Riflemen.",
-  },
-  {
-    id: "rifleman",
-    name: "Rifleman",
-    race: "human",
-    tier: 1,
-    role: "ranged",
-    attackType: "piercing",
-    armorType: "medium",
-    goldCost: 205,
-    lumberCost: 30,
-    foodCost: 3,
-    hp: 535,
-    damage: "21",
-    dps: 17,
-    speed: "medium",
-    range: "ranged (600)",
-    special: ["Long Rifle upgrade (+range)", "Anti-air capable"],
-    counters: ["gargoyle", "hippogryph", "faerie_dragon", "wind_rider"],
-    weakTo: ["grunt", "tauren", "mountain_giant"],
-    description: "Staple ranged Human unit. Piercing attack deals 200% vs Light armor — extremely effective vs flying units.",
-  },
-  {
-    id: "knight",
-    name: "Knight",
-    race: "human",
-    tier: 2,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "heavy",
-    goldCost: 245,
-    lumberCost: 60,
-    foodCost: 4,
-    hp: 835,
-    damage: "34",
-    dps: 25,
-    speed: "fast",
-    range: "melee",
-    special: ["High HP", "Fast movement speed"],
-    counters: ["ghoul", "grunt"],
-    weakTo: ["sorceress", "shaman", "gryphon_rider", "chimaera"],
-    description: "Fast, durable heavy cavalry. Strong melee presence. Vulnerable to magic damage (200% vs Heavy armor).",
-  },
-  {
-    id: "sorceress",
-    name: "Sorceress",
-    race: "human",
-    tier: 2,
-    role: "caster",
-    attackType: "magic",
-    armorType: "unarmored",
-    goldCost: 155,
-    lumberCost: 20,
-    foodCost: 2,
-    hp: 325,
-    damage: "11",
-    dps: 8,
-    speed: "medium",
-    range: "ranged (600)",
-    special: ["Slow", "Polymorph", "Invisibility", "Brilliance Aura"],
-    counters: ["tauren", "mountain_giant", "abomination"],
-    weakTo: ["headhunter", "crypt_fiend", "dryad"],
-    description: "Key Human caster. Slow halves enemy attack/move speed. Polymorph permanently removes powerful units from combat.",
-  },
-  {
-    id: "priest",
-    name: "Priest",
-    race: "human",
-    tier: 2,
-    role: "support",
-    attackType: "magic",
-    armorType: "unarmored",
-    goldCost: 135,
-    lumberCost: 10,
-    foodCost: 2,
-    hp: 290,
-    damage: "8.5",
-    dps: 7,
-    speed: "medium",
-    range: "ranged (600)",
-    special: ["Heal", "Dispel Magic", "Inner Fire", "Resurrection"],
-    counters: ["skeleton", "shade", "banshee"],
-    weakTo: ["headhunter", "crypt_fiend"],
-    description: "Essential support. Heal sustains army, Dispel removes buffs/summons, Inner Fire amplifies a unit's damage and armor.",
-  },
-  {
-    id: "spell_breaker",
-    name: "Spell Breaker",
-    race: "human",
-    tier: 2,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "medium",
-    goldCost: 215,
-    lumberCost: 30,
-    foodCost: 3,
-    hp: 600,
-    damage: "14",
-    dps: 12,
-    speed: "medium",
-    range: "ranged (450)",
-    special: ["Control Magic", "Spell Immunity", "Feedback (drains mana on attack)", "Dispel aura"],
-    counters: ["banshee", "witch_doctor", "sorceress", "necromancer"],
-    weakTo: ["grunt", "tauren", "ghoul"],
-    description: "Anti-magic specialist. Drains mana from enemies on each attack. Dispel removes buffs. Essential vs caster-heavy armies.",
-  },
-  {
-    id: "mortar_team",
-    name: "Mortar Team",
-    race: "human",
-    tier: 2,
-    role: "siege",
-    attackType: "siege",
-    armorType: "heavy",
-    goldCost: 180,
-    lumberCost: 70,
-    foodCost: 3,
-    hp: 360,
-    damage: "58",
-    dps: 22,
-    speed: "slow",
-    range: "ranged (950)",
-    special: ["Flare (reveals area + removes fog of war)", "Splash damage", "Long range"],
-    counters: ["buildings", "ancient_of_war"],
-    weakTo: ["grunt", "ghoul", "mountain_giant"],
-    description: "Long-range siege with splash. Flare reveals hidden enemy positions. Fragile in melee but devastating at range.",
-  },
-  {
-    id: "flying_machine",
-    name: "Flying Machine",
-    race: "human",
-    tier: 2,
-    role: "flying",
-    attackType: "piercing",
-    armorType: "heavy",
-    goldCost: 90,
-    lumberCost: 30,
-    foodCost: 1,
-    hp: 200,
-    damage: "14.5",
-    dps: 14,
-    speed: "fast",
-    range: "ranged (700)",
-    special: ["Gyrocopter Bomb upgrade (ground splash)", "Cheap scout", "Flying"],
-    counters: ["gargoyle", "wind_rider"],
-    weakTo: ["headhunter", "crypt_fiend"],
-    description: "Cheap air unit. Good scouting and anti-air capability. Bomb upgrade adds ground AoE splash.",
-  },
-  {
-    id: "gryphon_rider",
-    name: "Gryphon Rider",
-    race: "human",
-    tier: 3,
-    role: "flying",
-    attackType: "magic",
-    armorType: "light",
-    goldCost: 280,
-    lumberCost: 70,
-    foodCost: 4,
-    hp: 825,
-    damage: "50",
-    dps: 38,
-    speed: "fast",
-    range: "ranged (700)",
-    special: ["Storm Hammers upgrade (stun)", "Anti-air", "Flying"],
-    counters: ["tauren", "abomination", "mountain_giant", "knight"],
-    weakTo: ["headhunter", "crypt_fiend", "faerie_dragon"],
-    description: "Late-game aerial powerhouse. Magic attack deals 200% vs Heavy armor — shreds Knights and Taurens. Storm Hammers stuns air units.",
-  },
-  {
-    id: "dragon_hawk",
-    name: "Dragon Hawk Rider",
-    race: "human",
-    tier: 2,
-    role: "flying",
-    attackType: "piercing",
-    armorType: "light",
-    goldCost: 200,
-    lumberCost: 30,
-    foodCost: 3,
-    hp: 575,
-    damage: "19",
-    dps: 17,
-    speed: "fast",
-    range: "ranged (700)",
-    special: ["Cloud (blinds ground units)", "Flying", "Anti-air"],
-    counters: ["gargoyle", "wind_rider"],
-    weakTo: ["headhunter", "crypt_fiend"],
-    description: "Ranged flying unit with Cloud ability that blinds enemy units, causing them to miss attacks. Good anti-air and harass.",
-  },
-];
+type GameplayOverlay = {
+  role: UnitRole;
+  tier: UnitTier;
+  counters: string[];
+  weakTo: string[];
+};
 
-const ORC_UNITS: Unit[] = [
-  {
-    id: "grunt",
-    name: "Grunt",
-    race: "orc",
-    tier: 1,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "heavy",
-    goldCost: 200,
-    lumberCost: 0,
-    foodCost: 3,
-    hp: 700,
-    damage: "19.5",
-    dps: 17,
-    speed: "medium",
-    range: "melee",
-    special: ["High HP pool", "Brute Force upgrade"],
-    counters: ["footman", "ghoul", "skeleton"],
-    weakTo: ["sorceress", "dryad", "gryphon_rider"],
-    description: "Tough frontline brawler with excellent HP. Strong melee presence. Vulnerable to magic damage (200% vs Heavy armor).",
-  },
-  {
-    id: "headhunter",
-    name: "Troll Headhunter",
-    race: "orc",
-    tier: 1,
-    role: "ranged",
-    attackType: "piercing",
-    armorType: "medium",
-    goldCost: 135,
-    lumberCost: 20,
-    foodCost: 2,
-    hp: 350,
-    damage: "25",
-    dps: 20,
-    speed: "fast",
-    range: "ranged (500)",
-    special: ["Berserker upgrade (bonus damage/HP at cost of defense)", "Fast attack speed"],
-    counters: ["sorceress", "priest", "rifleman", "dryad", "archer"],
-    weakTo: ["footman", "knight", "ghoul"],
-    description: "Fast-attacking ranged unit. Piercing attack shreds Light armor (200%). Berserker upgrade massively increases DPS.",
-  },
-  {
-    id: "shaman",
-    name: "Shaman",
-    race: "orc",
-    tier: 2,
-    role: "caster",
-    attackType: "magic",
-    armorType: "unarmored",
-    goldCost: 130,
-    lumberCost: 20,
-    foodCost: 2,
-    hp: 335,
-    damage: "8.5",
-    dps: 8,
-    speed: "medium",
-    range: "ranged (600)",
-    special: ["Bloodlust (+50% attack speed)", "Purge (removes buffs/slows)", "Lightning Shield"],
-    counters: ["footman", "knight"],
-    weakTo: ["spell_breaker", "dryad"],
-    description: "Key Orc support caster. Bloodlust boosts ally attack speed by 50%. Purge removes Slow and other enemy buffs.",
-  },
-  {
-    id: "witch_doctor",
-    name: "Witch Doctor",
-    race: "orc",
-    tier: 2,
-    role: "support",
-    attackType: "magic",
-    armorType: "unarmored",
-    goldCost: 145,
-    lumberCost: 25,
-    foodCost: 2,
-    hp: 315,
-    damage: "12",
-    dps: 10,
-    speed: "medium",
-    range: "ranged (600)",
-    special: ["Stasis Trap (AoE stun)", "Healing Ward", "Sentry Ward"],
-    counters: ["footman", "rifleman"],
-    weakTo: ["spell_breaker", "priest"],
-    description: "Support caster. Healing Ward sustains army. Stasis Trap drops an invisible AoE stun trap for powerful ambushes.",
-  },
-  {
-    id: "raider",
-    name: "Raider",
-    race: "orc",
-    tier: 2,
-    role: "frontline",
-    attackType: "siege",
-    armorType: "medium",
-    goldCost: 180,
-    lumberCost: 40,
-    foodCost: 3,
-    hp: 610,
-    damage: "25",
-    dps: 18,
-    speed: "very fast",
-    range: "melee",
-    special: ["Ensnare (nets flying units to ground)", "Pillage (gains gold from buildings)", "Fast"],
-    counters: ["gryphon_rider", "wind_rider", "hippogryph", "gargoyle"],
-    weakTo: ["dryad", "sorceress"],
-    description: "Fast cavalry. Ensnare permanently grounds any flying unit. Pillage earns gold attacking buildings. Siege attack good vs buildings.",
-  },
-  {
-    id: "catapult",
-    name: "Demolisher",
-    race: "orc",
-    tier: 2,
-    role: "siege",
-    attackType: "siege",
-    armorType: "heavy",
-    goldCost: 220,
-    lumberCost: 50,
-    foodCost: 4,
-    hp: 425,
-    damage: "80.5",
-    dps: 28,
-    speed: "slow",
-    range: "ranged (850)",
-    special: ["Burning Oil upgrade (slowing oil patch)", "High building damage"],
-    counters: ["buildings"],
-    weakTo: ["grunt", "tauren", "footman"],
-    description: "Heavy siege engine. Burning Oil upgrade creates slow zones. Fragile in melee but deals massive siege damage.",
-  },
-  {
-    id: "kodo_beast",
-    name: "Kodo Beast",
-    race: "orc",
-    tier: 2,
-    role: "support",
-    attackType: "normal",
-    armorType: "unarmored",
-    goldCost: 255,
-    lumberCost: 60,
-    foodCost: 4,
-    hp: 1000,
-    damage: "18",
-    dps: 14,
-    speed: "medium",
-    range: "melee",
-    special: ["War Drums Aura (+15% attack damage)", "Devour (swallows a unit)", "High HP"],
-    counters: ["footman", "grunt"],
-    weakTo: ["gryphon_rider", "chimaera"],
-    description: "Support unit with War Drums Aura boosting ally attack damage by 15%. Can Devour webbed units to remove them permanently.",
-  },
-  {
-    id: "spirit_walker",
-    name: "Spirit Walker",
-    race: "orc",
-    tier: 3,
-    role: "caster",
-    attackType: "magic",
-    armorType: "unarmored",
-    goldCost: 195,
-    lumberCost: 35,
-    foodCost: 3,
-    hp: 500,
-    damage: "19.5",
-    dps: 16,
-    speed: "medium",
-    range: "ranged (600)",
-    special: ["Ethereal Form (magic immunity, immune to physical)", "Spirit Link (shares damage)", "Ancestral Spirit"],
-    counters: ["sorceress", "priest", "necromancer"],
-    weakTo: ["headhunter", "dryad"],
-    description: "Versatile caster. Spirit Link redistributes damage across units. Ethereal Form grants temporary magic immunity.",
-  },
-  {
-    id: "tauren",
-    name: "Tauren",
-    race: "orc",
-    tier: 3,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "heavy",
-    goldCost: 280,
-    lumberCost: 80,
-    foodCost: 5,
-    hp: 1300,
-    damage: "33",
-    dps: 35,
-    speed: "medium",
-    range: "melee",
-    special: ["Pulverize (25% chance AoE splash on hit)", "Endurance Aura (movement/attack speed to nearby)"],
-    counters: ["footman", "grunt", "ghoul", "abomination"],
-    weakTo: ["sorceress", "gryphon_rider", "chimaera"],
-    description: "Massive frontline powerhouse. Pulverize deals AoE splash damage on 25% of attacks. Very high HP and damage output.",
-  },
-  {
-    id: "wind_rider",
-    name: "Wind Rider",
-    race: "orc",
-    tier: 3,
-    role: "flying",
-    attackType: "piercing",
-    armorType: "light",
-    goldCost: 265,
-    lumberCost: 40,
-    foodCost: 4,
-    hp: 570,
-    damage: "40",
-    dps: 30,
-    speed: "fast",
-    range: "ranged (700)",
-    special: ["Envenomed Spears upgrade (poison slows)", "Flying", "Anti-air"],
-    counters: ["rifleman", "gryphon_rider", "archer"],
-    weakTo: ["crypt_fiend", "faerie_dragon", "dragon_hawk"],
-    description: "Orc air unit with high piercing damage. Envenomed Spears poisons enemies, slowing them. Strong vs other flying units.",
-  },
-  {
-    id: "batrider",
-    name: "Batrider",
-    race: "orc",
-    tier: 2,
-    role: "flying",
-    attackType: "siege",
-    armorType: "light",
-    goldCost: 160,
-    lumberCost: 40,
-    foodCost: 2,
-    hp: 325,
-    damage: "14",
-    dps: 10,
-    speed: "fast",
-    range: "ranged (500)",
-    special: ["Liquid Fire (destroys buildings faster, disables repair)", "Flying"],
-    counters: ["buildings"],
-    weakTo: ["headhunter", "rifleman", "crypt_fiend"],
-    description: "Cheap flying siege unit. Liquid Fire ability disables building repair and deals bonus damage to structures.",
-  },
-];
+type LiquipediaUnit = Omit<
+  Unit,
+  "role" | "tier" | "special" | "counters" | "weakTo" | "description" | "damage"
+> & {
+  attackType: string;
+  armorType: string;
+};
 
-const NIGHTELF_UNITS: Unit[] = [
-  {
-    id: "wisp",
-    name: "Wisp",
-    race: "nightelf",
-    tier: 1,
-    role: "support",
-    attackType: "normal",
-    armorType: "medium",
-    goldCost: 60,
-    lumberCost: 0,
-    foodCost: 1,
-    hp: 120,
-    damage: "0",
-    dps: 0,
-    speed: "fast",
-    range: "melee",
-    special: ["Detonate (AoE dispel + mana drain)", "Renew (repairs ancients)", "No combat role"],
-    counters: [],
-    weakTo: [],
-    description: "Worker unit. Detonate dispels magic effects in an AoE and drains 100 mana from nearby units. Strategically useful.",
-  },
-  {
-    id: "archer",
-    name: "Archer",
-    race: "nightelf",
-    tier: 1,
-    role: "ranged",
-    attackType: "piercing",
-    armorType: "medium",
-    goldCost: 130,
-    lumberCost: 10,
-    foodCost: 2,
-    hp: 275,
-    damage: "17",
-    dps: 15,
-    speed: "fast",
-    range: "ranged (500)",
-    special: ["Marksmanship upgrade (+damage/range)", "Elune's Grace (reduces ranged damage taken)"],
-    counters: ["gargoyle", "wind_rider", "sorceress", "witch_doctor"],
-    weakTo: ["grunt", "ghoul", "footman"],
-    description: "Fast, cheap ranged unit. Fragile but piercing damage is strong vs flying units. Marksmanship upgrade makes them formidable.",
-  },
-  {
-    id: "huntress",
-    name: "Huntress",
-    race: "nightelf",
-    tier: 1,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "unarmored",
-    goldCost: 195,
-    lumberCost: 20,
-    foodCost: 3,
-    hp: 600,
-    damage: "17",
-    dps: 15,
-    speed: "fast",
-    range: "melee",
-    special: ["Moon Glaive (bounces to hit multiple targets)", "Sentinel (owl scout)", "Cripple upgrade"],
-    counters: ["footman", "grunt", "ghoul", "skeleton"],
-    weakTo: ["headhunter", "rifleman", "crypt_fiend"],
-    description: "Fast melee unit. Moon Glaive bounces between multiple nearby enemies — excellent vs grouped units. Vulnerable to piercing.",
-  },
-  {
-    id: "dryad",
-    name: "Dryad",
-    race: "nightelf",
-    tier: 2,
-    role: "support",
-    attackType: "piercing",
-    armorType: "unarmored",
-    goldCost: 145,
-    lumberCost: 60,
-    foodCost: 3,
-    hp: 435,
-    damage: "18",
-    dps: 15,
-    speed: "fast",
-    range: "ranged (550)",
-    special: ["Abolish Magic (dispel + AoE dispel)", "Spell Immunity", "Slow Poison (attack slows target)"],
-    counters: ["shaman", "sorceress", "witch_doctor", "necromancer"],
-    weakTo: ["grunt", "tauren", "footman"],
-    description: "Anti-magic unit with Spell Immunity. Abolish Magic mass-dispels enemy buffs and destroys summoned units. Hard counter to caster armies.",
-  },
-  {
-    id: "druid_of_the_talon",
-    name: "Druid of the Talon",
-    race: "nightelf",
-    tier: 2,
-    role: "caster",
-    attackType: "magic",
-    armorType: "unarmored",
-    goldCost: 135,
-    lumberCost: 20,
-    foodCost: 2,
-    hp: 300,
-    damage: "12",
-    dps: 9,
-    speed: "fast",
-    range: "ranged (600)",
-    special: ["Faerie Fire (reveals + reduces 5 armor)", "Cyclone (disables unit for 15s)", "Crow Form (flying scout)"],
-    counters: ["tauren", "mountain_giant", "footman"],
-    weakTo: ["headhunter", "rifleman"],
-    description: "Caster with Cyclone to remove any unit from battle for 15 seconds. Faerie Fire reduces enemy armor by 5, amplifying all damage taken.",
-  },
-  {
-    id: "druid_of_the_claw",
-    name: "Druid of the Claw",
-    race: "nightelf",
-    tier: 2,
-    role: "support",
-    attackType: "normal",
-    armorType: "heavy",
-    goldCost: 255,
-    lumberCost: 80,
-    foodCost: 4,
-    hp: 430,
-    damage: "20.5",
-    dps: 15,
-    speed: "medium",
-    range: "melee",
-    special: ["Roar (attack speed/damage aura)", "Bear Form (transforms into 1200 HP bear)", "Rejuvenation"],
-    counters: ["grunt", "ghoul", "skeleton"],
-    weakTo: ["sorceress", "shaman"],
-    description: "Versatile frontline/support. Roar boosts nearby allies. Bear Form transforms into a powerful 1200 HP melee tank.",
-  },
-  {
-    id: "mountain_giant",
-    name: "Mountain Giant",
-    race: "nightelf",
-    tier: 3,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "medium",
-    goldCost: 425,
-    lumberCost: 100,
-    foodCost: 7,
-    hp: 1600,
-    damage: "34",
-    dps: 25,
-    speed: "slow",
-    range: "melee",
-    special: ["Taunt (forces nearby enemies to attack MG)", "Hardened Skin (reduces per-hit damage)", "Resistant Skin"],
-    counters: ["footman", "grunt", "ghoul"],
-    weakTo: ["gryphon_rider", "sorceress", "shaman"],
-    description: "Tank with 1600 HP. Taunt protects fragile allies. Hardened Skin reduces per-hit damage — very effective vs many weak attackers. Note: Medium armor means Normal deals 150%.",
-  },
-  {
-    id: "hippogryph",
-    name: "Hippogryph",
-    race: "nightelf",
-    tier: 2,
-    role: "flying",
-    attackType: "normal",
-    armorType: "unarmored",
-    goldCost: 160,
-    lumberCost: 20,
-    foodCost: 2,
-    hp: 525,
-    damage: "53.5",
-    dps: 40,
-    speed: "fast",
-    range: "ranged (600)",
-    special: ["Can carry Archer (Hippogryph Rider)", "Anti-air", "Flying"],
-    counters: ["gargoyle", "wind_rider", "flying_machine"],
-    weakTo: ["headhunter", "crypt_fiend", "rifleman"],
-    description: "Strong flying unit that can mount an Archer for combined ranged attacks. High damage output. Vulnerable to piercing (Unarmored 150%).",
-  },
-  {
-    id: "faerie_dragon",
-    name: "Faerie Dragon",
-    race: "nightelf",
-    tier: 2,
-    role: "flying",
-    attackType: "piercing",
-    armorType: "light",
-    goldCost: 155,
-    lumberCost: 25,
-    foodCost: 2,
-    hp: 450,
-    damage: "15",
-    dps: 14,
-    speed: "fast",
-    range: "ranged (650)",
-    special: ["Mana Flare (damages enemy when they cast spells)", "Phase Shift (dodges targeted spells)", "Flying"],
-    counters: ["sorceress", "shaman", "witch_doctor", "wind_rider"],
-    weakTo: ["headhunter", "rifleman"],
-    description: "Anti-caster flying unit. Mana Flare punishes enemies for casting spells. Phase Shift dodges incoming targeted abilities. Piercing attack vs Light armor.",
-  },
-  {
-    id: "chimaera",
-    name: "Chimaera",
-    race: "nightelf",
-    tier: 3,
-    role: "flying",
-    attackType: "magic",
-    armorType: "light",
-    goldCost: 330,
-    lumberCost: 70,
-    foodCost: 5,
-    hp: 1000,
-    damage: "75",
-    dps: 52,
-    speed: "medium",
-    range: "ranged (700)",
-    special: ["Corrosive Breath upgrade (acid AoE splash)", "Flying", "Anti-air"],
-    counters: ["tauren", "mountain_giant", "abomination", "knight", "grunt"],
-    weakTo: ["headhunter", "crypt_fiend", "rifleman"],
-    description: "Late-game aerial powerhouse. Magic attack deals 200% vs Heavy armor. Corrosive Breath upgrade adds AoE acid splash. Expensive but extremely powerful.",
-  },
-  {
-    id: "glaive_thrower",
-    name: "Glaive Thrower",
-    race: "nightelf",
-    tier: 2,
-    role: "siege",
-    attackType: "siege",
-    armorType: "heavy",
-    goldCost: 210,
-    lumberCost: 65,
-    foodCost: 3,
-    hp: 300,
-    damage: "44.5",
-    dps: 20,
-    speed: "slow",
-    range: "ranged (700)",
-    special: ["Multiple targets upgrade (bouncing glaive)", "Long range siege"],
-    counters: ["buildings"],
-    weakTo: ["grunt", "ghoul", "footman"],
-    description: "NE siege unit. Multiple targets upgrade makes glaives bounce between several enemies. Good for clearing base defenses.",
-  },
-];
+function buildUnit(raw: LiquipediaUnit): Unit {
+  const overlay = (gameplayData as Record<string, GameplayOverlay>)[raw.id];
+  const avgDmg = (raw.damageMin + raw.damageMax) / 2;
 
-const UNDEAD_UNITS: Unit[] = [
-  {
-    id: "ghoul",
-    name: "Ghoul",
-    race: "undead",
-    tier: 1,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "heavy",
-    goldCost: 120,
-    lumberCost: 0,
-    foodCost: 2,
-    hp: 340,
-    damage: "13",
-    dps: 14,
-    speed: "fast",
-    range: "melee",
-    special: ["Cannibalize (eat corpse to heal fast)", "Can harvest lumber", "Fast attack speed"],
-    counters: ["skeleton", "shade"],
-    weakTo: ["footman", "huntress", "knight"],
-    description: "Fast, cheap melee unit. Cannibalize heals 40 HP/sec from corpses between fights. Core Undead frontline. Note: Heavy armor means magic deals 200%.",
-  },
-  {
-    id: "crypt_fiend",
-    name: "Crypt Fiend",
-    race: "undead",
-    tier: 2,
-    role: "ranged",
-    attackType: "piercing",
-    armorType: "medium",
-    goldCost: 215,
-    lumberCost: 40,
-    foodCost: 3,
-    hp: 550,
-    damage: "28.5",
-    dps: 20,
-    speed: "medium",
-    range: "ranged (600)",
-    special: ["Web (grounds flying units)", "Burrow (hides underground, regens HP)"],
-    counters: ["gryphon_rider", "wind_rider", "hippogryph", "gargoyle", "chimaera", "flying_machine"],
-    weakTo: ["knight", "tauren", "footman"],
-    description: "Ranged anti-air unit. Web permanently grounds any flying unit. Burrow allows healing between engagements. Medium armor — note Normal deals 150%.",
-  },
-  {
-    id: "necromancer",
-    name: "Necromancer",
-    race: "undead",
-    tier: 2,
-    role: "caster",
-    attackType: "magic",
-    armorType: "unarmored",
-    goldCost: 145,
-    lumberCost: 20,
-    foodCost: 2,
-    hp: 305,
-    damage: "8.5",
-    dps: 7,
-    speed: "medium",
-    range: "ranged (600)",
-    special: ["Raise Dead (summons 2 skeleton warriors from corpse)", "Unholy Frenzy (attack speed boost at HP cost)", "Cripple"],
-    counters: ["footman", "rifleman", "grunt"],
-    weakTo: ["priest", "spell_breaker", "dryad"],
-    description: "Raises skeleton warriors from corpses — scales with enemy casualties. Cripple severely debuffs a unit's speed and damage.",
-  },
-  {
-    id: "banshee",
-    name: "Banshee",
-    race: "undead",
-    tier: 2,
-    role: "caster",
-    attackType: "magic",
-    armorType: "unarmored",
-    goldCost: 155,
-    lumberCost: 30,
-    foodCost: 3,
-    hp: 285,
-    damage: "11",
-    dps: 8,
-    speed: "medium",
-    range: "ranged (600)",
-    special: ["Curse (50% miss chance)", "Anti-magic Shell (prevents targeting by spells)", "Possession (converts unit permanently)"],
-    counters: ["tauren", "mountain_giant", "gryphon_rider", "chimaera"],
-    weakTo: ["priest", "spell_breaker"],
-    description: "Tricky caster. Possession permanently steals enemy units. Curse causes 50% miss chance. Anti-magic Shell makes units immune to targeted spells.",
-  },
-  {
-    id: "abomination",
-    name: "Abomination",
-    race: "undead",
-    tier: 2,
-    role: "frontline",
-    attackType: "normal",
-    armorType: "heavy",
-    goldCost: 240,
-    lumberCost: 70,
-    foodCost: 4,
-    hp: 1175,
-    damage: "36",
-    dps: 28,
-    speed: "slow",
-    range: "melee",
-    special: ["Disease Cloud (AoE disease aura on nearby enemies)", "Very high HP"],
-    counters: ["footman", "ghoul", "grunt"],
-    weakTo: ["sorceress", "gryphon_rider", "chimaera"],
-    description: "Heavy frontline. Disease Cloud passively infects nearby enemies with disease dealing ongoing damage. Very durable. Note: magic deals 200% vs Heavy armor.",
-  },
-  {
-    id: "gargoyle",
-    name: "Gargoyle",
-    race: "undead",
-    tier: 2,
-    role: "flying",
-    attackType: "normal",
-    armorType: "unarmored",
-    goldCost: 185,
-    lumberCost: 30,
-    foodCost: 2,
-    hp: 410,
-    damage: "19.5",
-    dps: 14,
-    speed: "fast",
-    range: "ranged (700)",
-    special: ["Stone Form (invulnerable building-state, regenerates HP)", "Flying"],
-    counters: ["headhunter", "rifleman", "archer"],
-    weakTo: ["headhunter", "rifleman", "archer"],
-    description: "Flying unit with Stone Form — becomes invulnerable temporarily to heal HP. Note: Unarmored armor means piercing deals 150% and siege deals 150%.",
-  },
-  {
-    id: "shade",
-    name: "Shade",
-    race: "undead",
-    tier: 1,
-    role: "support",
-    attackType: "normal",
-    armorType: "medium",
-    goldCost: 0,
-    lumberCost: 0,
-    foodCost: 1,
-    hp: 125,
-    damage: "0",
-    dps: 0,
-    speed: "fast",
-    range: "melee",
-    special: ["Permanent Invisibility", "Detector (sees invisible units)", "No attack — pure scout"],
-    counters: [],
-    weakTo: [],
-    description: "Permanently invisible scout. Reveals invisible units. No attack — pure map control and intelligence tool.",
-  },
-  {
-    id: "meat_wagon",
-    name: "Meat Wagon",
-    race: "undead",
-    tier: 2,
-    role: "siege",
-    attackType: "siege",
-    armorType: "heavy",
-    goldCost: 230,
-    lumberCost: 50,
-    foodCost: 4,
-    hp: 380,
-    damage: "79.5",
-    dps: 24,
-    speed: "slow",
-    range: "ranged (950)",
-    special: ["Disease Cloud splash", "Stores corpses", "Launches corpses creating disease clouds"],
-    counters: ["buildings"],
-    weakTo: ["ghoul", "grunt", "footman"],
-    description: "Undead siege machine. Stores corpses and launches them to create disease cloud areas. Excellent building damage. Very fragile.",
-  },
-  {
-    id: "obsidian_statue",
-    name: "Obsidian Statue",
-    race: "undead",
-    tier: 2,
-    role: "support",
-    attackType: "magic",
-    armorType: "heavy",
-    goldCost: 200,
-    lumberCost: 35,
-    foodCost: 3,
-    hp: 550,
-    damage: "7.5",
-    dps: 6,
-    speed: "slow",
-    range: "ranged (600)",
-    special: ["Orb of Annihilation (AoE mana restore)", "Essence of Blight (AoE HP restore)", "Upgrades to Destroyer"],
-    counters: [],
-    weakTo: ["spell_breaker", "faerie_dragon"],
-    description: "Critical support unit. Regenerates HP and mana for nearby allies. Upgrades into the powerful Destroyer at tier 3.",
-  },
-  {
-    id: "frost_wyrm",
-    name: "Frost Wyrm",
-    race: "undead",
-    tier: 3,
-    role: "flying",
-    attackType: "magic",
-    armorType: "light",
-    goldCost: 385,
-    lumberCost: 120,
-    foodCost: 7,
-    hp: 1350,
-    damage: "104",
-    dps: 53,
-    speed: "medium",
-    range: "ranged (700)",
-    special: ["Freezing Breath (slows buildings and units it attacks)", "AoE splash attack", "Flying"],
-    counters: ["buildings", "gargoyle"],
-    weakTo: ["headhunter", "rifleman", "archer"],
-    description: "Massive flying siege unit. Magic attack AoE splash. Freezing Breath slows all hit enemies. Note: Light armor means piercing deals 200%.",
-  },
-  {
-    id: "destroyer",
-    name: "Destroyer",
-    race: "undead",
-    tier: 3,
-    role: "flying",
-    attackType: "magic",
-    armorType: "light",
-    goldCost: 100,
-    lumberCost: 50,
-    foodCost: 5,
-    hp: 850,
-    damage: "35",
-    dps: 35,
-    speed: "fast",
-    range: "ranged (700)",
-    special: ["Devour Magic (removes buffs, gains mana)", "Absorb Mana (drains enemy mana)", "Orb of Annihilation", "Flying"],
-    counters: ["sorceress", "shaman", "witch_doctor", "druid_of_the_talon"],
-    weakTo: ["headhunter", "rifleman"],
-    description: "Upgraded Obsidian Statue. Devours magical effects for mana. Magic attack wrecks Heavy armor. Flying anti-magic platform.",
-  },
-];
+  const abilityLabels = raw.abilities
+    .filter((a) => a.name !== "Gather" && !a.name.startsWith("Unit Inventory"))
+    .map((a) => a.name);
 
-export const ALL_UNITS: Unit[] = [
-  ...HUMAN_UNITS,
-  ...ORC_UNITS,
-  ...NIGHTELF_UNITS,
-  ...UNDEAD_UNITS,
-];
+  return {
+    ...raw,
+    attackType: raw.attackType as AttackType,
+    armorType: raw.armorType as ArmorType,
+    role: overlay?.role ?? "frontline",
+    tier: overlay?.tier ?? 1,
+    counters: overlay?.counters ?? [],
+    weakTo: overlay?.weakTo ?? [],
+    damage: avgDmg % 1 === 0 ? String(avgDmg) : avgDmg.toFixed(1),
+    speed: raw.speed,
+    special: abilityLabels,
+    description: raw.lore ?? "",
+    abilities: raw.abilities as UnitAbility[],
+    upgrades: raw.upgrades as UnitUpgrade[],
+  };
+}
+
+const mergedUnits = (liquipediaData.units as LiquipediaUnit[]).map(buildUnit);
+
+export const ALL_UNITS: Unit[] = mergedUnits;
 
 export const UNITS_BY_RACE: Record<Race, Unit[]> = {
-  human:    HUMAN_UNITS,
-  orc:      ORC_UNITS,
-  nightelf: NIGHTELF_UNITS,
-  undead:   UNDEAD_UNITS,
+  human:    mergedUnits.filter((u) => u.race === "human"),
+  orc:      mergedUnits.filter((u) => u.race === "orc"),
+  nightelf: mergedUnits.filter((u) => u.race === "nightelf"),
+  undead:   mergedUnits.filter((u) => u.race === "undead"),
 };
 
 export const RACE_LABELS: Record<Race, string> = {
@@ -1004,3 +176,45 @@ export const RACE_DESCRIPTIONS: Record<Race, string> = {
   nightelf: "Mobile and adaptive. Dryads hard-counter magic armies, Chimaeras dominate late-game, Mountain Giant tanks with Taunt.",
   undead:   "Attrition army using summons and disease. Necromancers flood the map with skeletons, Banshees steal units, Frost Wyrms siege late.",
 };
+
+/** Liquipedia sync metadata — for attribution footer */
+export const UNITS_DATA_SOURCE = {
+  url: liquipediaData.source,
+  license: liquipediaData.license,
+  syncedAt: liquipediaData.syncedAt,
+};
+
+/** Format damage range like Liquipedia: "12 - 14 (15 - 20)" */
+export function formatDamage(unit: Unit): string {
+  const base = `${unit.damageMin} - ${unit.damageMax}`;
+  if (unit.damageUpgradedMin != null && unit.damageUpgradedMax != null) {
+    return `${base} (${unit.damageUpgradedMin} - ${unit.damageUpgradedMax})`;
+  }
+  return base;
+}
+
+/** Format speed like Liquipedia: "270 (330)" */
+export function formatSpeed(unit: Unit): string {
+  if (unit.speedUpgraded) return `${unit.speed} (${unit.speedUpgraded})`;
+  return String(unit.speed);
+}
+
+/** Format armor like Liquipedia: "0 (6)" */
+export function formatArmor(unit: Unit): string {
+  if (unit.armorUpgraded != null) return `${unit.armor} (${unit.armorUpgraded})`;
+  return String(unit.armor);
+}
+
+/** Format cooldown like Liquipedia: "1.35 (1)" */
+export function formatCooldown(unit: Unit): string {
+  if (unit.cooldownUpgraded) return `${unit.cooldown} (${unit.cooldownUpgraded})`;
+  return String(unit.cooldown);
+}
+
+/** Classify movement speed label from numeric value */
+export function speedLabel(speed: number): string {
+  if (speed >= 350) return "Fast";
+  if (speed >= 270) return "Average";
+  if (speed >= 220) return "Slow";
+  return "Very Slow";
+}

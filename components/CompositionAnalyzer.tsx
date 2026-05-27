@@ -9,9 +9,12 @@ import { getUnitIcon, getHeroIcon } from "@/data/icons";
 import { computeMatchup, type MatchupResult, type UnitMatchupScore, type HeroMatchupScore } from "@/lib/matchup-engine";
 import { DAMAGE_MATRIX, getEffectivenessLabel } from "@/data/damage-matrix";
 import { getBuildOrder } from "@/data/build-orders";
-import { UnitCard } from "@/components/UnitCard";
-import { HeroCard } from "@/components/HeroCard";
+import { UnitTooltip } from "@/components/UnitTooltip";
+import { HeroCard, HeroExpandedPanel } from "@/components/HeroCard";
+import { HeroTooltip } from "@/components/HeroTooltip";
 import { MatchupMatrixModal } from "@/components/MatchupMatrixModal";
+import { CompactUnitDetail } from "@/components/UnitDetailContent";
+import { getRecommendationColor, getRecommendationLabel } from "@/lib/matchup-engine";
 import { cn } from "@/lib/utils";
 
 function scoreUnitVsComposition(unit: Unit, enemyUnits: Unit[], enemyHeroes: Hero[]): UnitMatchupScore {
@@ -78,23 +81,189 @@ function scoreHeroVsComposition(hero: Hero, enemyRace: Race, enemyUnits: Unit[],
   return { hero, relevanceScore, strongPoints, weakPoints, recommendation };
 }
 
-function ToggleChip({ label, sub, iconSrc, active, onClick }: { label: string; sub: string; iconSrc: string; active: boolean; onClick: () => void; }) {
+// ── Ranked unit list row ─────────────────────────────────────────────────────
+function UnitRow({
+  score,
+  rank,
+  expanded,
+  onToggle,
+}: {
+  score: UnitMatchupScore;
+  rank: number;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const { unit, offensiveScore, defensiveScore, overallScore, explanation, effectivenessVsEnemyUnits, recommendation } = score;
+  const pct = Math.round(overallScore * 100);
+
+  return (
+    <div className="border-b border-white/[0.05] last:border-b-0">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.02] transition-colors text-left"
+      >
+        {/* Rank */}
+        <span className="font-mono text-[10px] text-white/20 w-5 flex-shrink-0 tabular-nums text-right">
+          {String(rank).padStart(2, "0")}
+        </span>
+
+        {/* Icon */}
+        <UnitTooltip unit={unit}>
+          <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden border border-white/[0.10] cursor-help">
+            <Image src={getUnitIcon(unit.id)} alt={unit.name} fill className="object-cover" unoptimized />
+          </div>
+        </UnitTooltip>
+
+        {/* Name + meta */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-sm text-white">{unit.name}</span>
+            <span className={cn("font-mono text-[10px] tracking-[0.08em] uppercase", getRecommendationColor(recommendation))}>
+              {getRecommendationLabel(recommendation)}
+            </span>
+          </div>
+          <div className="font-mono text-[10px] text-white/25 mt-0.5">
+            T{unit.tier} · {unit.goldCost}g · {ATTACK_TYPE_LABELS[unit.attackType]} / {ARMOR_TYPE_LABELS[unit.armorType]}
+          </div>
+        </div>
+
+        {/* Mini bars + score */}
+        <div className="hidden sm:flex flex-col gap-1 w-20 flex-shrink-0">
+          {[
+            { label: "OFF", val: offensiveScore, color: "bg-emerald-500", tc: "text-emerald-500/60" },
+            { label: "DEF", val: defensiveScore, color: "bg-blue-400",    tc: "text-blue-400/60"   },
+          ].map(({ label, val, color, tc }) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <span className={cn("font-mono text-[9px] w-5 flex-shrink-0", tc)}>{label}</span>
+              <div className="flex-1 h-[2px] bg-white/[0.06]">
+                <div className={color} style={{ width: `${Math.min(val * 70, 100)}%`, height: "100%" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <span className="font-mono text-xs font-semibold text-white/50 tabular-nums w-9 text-right flex-shrink-0">
+          {pct}%
+        </span>
+        <span className={cn("text-white/20 text-[10px] transition-transform duration-150 flex-shrink-0", expanded && "rotate-180")}>▼</span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-white/[0.05]">
+          {/* Explanation banner */}
+          {explanation && (
+            <p className="text-[11px] text-white/40 leading-relaxed px-4 pt-3 pb-3 border-b border-white/[0.04]">
+              {explanation}
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_200px] divide-y lg:divide-y-0 lg:divide-x divide-white/[0.05]">
+            {/* Left: compact unit stats + abilities */}
+            <div className="px-4 py-4">
+              <CompactUnitDetail unit={unit} />
+            </div>
+
+            {/* Right: effectiveness list — compact, no scroll needed for short lists */}
+            <div className="px-4 py-4">
+              <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-white/25 mb-2.5">
+                vs Enemy
+              </p>
+              <div className="space-y-px">
+                {[...effectivenessVsEnemyUnits]
+                  .sort((a, b) => b.multiplier - a.multiplier)
+                  .map(({ enemyUnit, multiplier }) => (
+                    <div key={enemyUnit.id} className="flex items-center justify-between gap-2 py-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="relative h-4 w-4 overflow-hidden flex-shrink-0">
+                          <Image src={getUnitIcon(enemyUnit.id)} alt={enemyUnit.name} fill className="object-cover" unoptimized />
+                        </div>
+                        <span className="text-white/35 truncate text-[10px]">{enemyUnit.name}</span>
+                      </div>
+                      <span className={cn(
+                        "font-mono font-semibold flex-shrink-0 text-[10px] tabular-nums",
+                        multiplier >= 1.5 ? "text-emerald-400" : multiplier >= 1.0 ? "text-amber-400" : "text-red-400"
+                      )}>
+                        {Math.round(multiplier * 100)}%
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Portrait-style unit/hero selector chip ──────────────────────────────────
+function ToggleChip({
+  label,
+  sub,
+  iconSrc,
+  active,
+  onClick,
+}: {
+  label: string;
+  sub: string;
+  iconSrc: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-xs transition-all duration-150",
-        active ? "border-amber-500/40 bg-amber-500/10 text-white" : "border-white/[0.07] bg-white/[0.03] text-white/40 hover:border-white/[0.15] hover:text-white/60"
+        "flex flex-col items-center gap-2 py-3 px-2 w-full rounded-xl border transition-colors duration-100",
+        active
+          ? "border-amber-500/50 bg-amber-500/[0.06] text-white"
+          : "border-white/[0.07] bg-white/[0.02] text-white/40 hover:border-white/[0.13] hover:bg-white/[0.04] hover:text-white/65"
       )}
     >
-      <div className={cn("relative h-8 w-8 flex-shrink-0 overflow-hidden border", active ? "border-amber-500/40" : "border-white/[0.08]")}>
+      <div className={cn(
+        "relative h-12 w-12 overflow-hidden border flex-shrink-0",
+        active ? "border-amber-500/40" : "border-white/[0.10]"
+      )}>
         <Image src={iconSrc} alt={label} fill className="object-cover" unoptimized />
       </div>
-      <div className="min-w-0">
-        <p className="font-medium truncate text-[11px]">{label}</p>
-        <p className="text-[10px] text-white/25 truncate">{sub}</p>
+      <div className="min-w-0 w-full px-1">
+        <p className="text-[11px] font-medium leading-tight truncate">{label}</p>
+        <p className="text-[9px] font-mono text-white/25 mt-0.5 truncate">{sub}</p>
       </div>
     </button>
+  );
+}
+
+// ── Hairline section divider ─────────────────────────────────────────────────
+function PickerSection({
+  label,
+  showClear,
+  onClear,
+  children,
+}: {
+  label: string;
+  showClear: boolean;
+  onClear: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-3">
+        <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-white/35 flex-shrink-0">
+          {label}
+        </span>
+        <div className="h-px flex-1 bg-white/[0.07]" />
+        {showClear && (
+          <button
+            onClick={onClear}
+            className="font-mono text-[10px] text-white/25 hover:text-white/55 transition-colors flex-shrink-0"
+          >
+            clear
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
   );
 }
 
@@ -114,6 +283,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
   const heroFirstId = buildOrder?.heroFirst;
   const toggleUnit = (id: string) => setSelectedUnitIds((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const toggleHero = (id: string) => setSelectedHeroIds((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const clearAll = () => { setSelectedUnitIds(new Set()); setSelectedHeroIds(new Set()); };
   const hasSelection = selectedUnitIds.size > 0 || selectedHeroIds.size > 0;
 
   const customResult = useMemo(() => {
@@ -135,8 +305,6 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
   const situational  = activeUnitScores.filter((s) => s.recommendation === "situational");
   const avoid        = activeUnitScores.filter((s) => s.recommendation === "avoid");
 
-  // If the expanded card is at an odd index (col 2), swap it with its left neighbor
-  // so col-span-2 always starts from column 1, preventing layout gaps.
   function reorderForExpand(scores: typeof recommended) {
     if (!expandedUnitId) return scores;
     const idx = scores.findIndex((s) => s.unit.id === expandedUnitId);
@@ -146,14 +314,14 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
     return result;
   }
 
-  function renderUnitGrid(scores: typeof recommended, className?: string) {
-    const ordered = reorderForExpand(scores);
+  function renderUnitList(scores: typeof recommended, startRank = 1) {
     return (
-      <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-2.5 items-start", className)}>
-        {ordered.map((score) => (
-          <UnitCard
+      <div className="rounded-xl border border-white/[0.07] overflow-hidden">
+        {scores.map((score, idx) => (
+          <UnitRow
             key={score.unit.id}
             score={score}
+            rank={startRank + idx}
             expanded={expandedUnitId === score.unit.id}
             onToggle={() => setExpandedUnitId(expandedUnitId === score.unit.id ? null : score.unit.id)}
           />
@@ -162,159 +330,188 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
     );
   }
 
-  function reorderHeroForExpand(scores: typeof activeHeroScores) {
-    if (!expandedHeroId) return scores;
-    const idx = scores.findIndex((s) => s.hero.id === expandedHeroId);
-    if (idx <= 0 || idx % 2 === 0) return scores;
-    const result = [...scores];
-    [result[idx - 1], result[idx]] = [result[idx], result[idx - 1]];
-    return result;
-  }
-
   function renderHeroGrid(scores: typeof activeHeroScores) {
-    const ordered = reorderHeroForExpand(scores);
+    const expandedScore = scores.find((s) => s.hero.id === expandedHeroId);
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 items-start">
-        {ordered.map((score) => (
-          <HeroCard
-            key={score.hero.id}
-            score={score}
-            expanded={expandedHeroId === score.hero.id}
-            onToggle={() => setExpandedHeroId(expandedHeroId === score.hero.id ? null : score.hero.id)}
-          />
-        ))}
+      <div className="space-y-3">
+        {/* Portrait strip — equal height, 2 on mobile, 4 on desktop */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {scores.map((score) => (
+            <HeroCard
+              key={score.hero.id}
+              score={score}
+              expanded={expandedHeroId === score.hero.id}
+              onToggle={() => setExpandedHeroId(expandedHeroId === score.hero.id ? null : score.hero.id)}
+            />
+          ))}
+        </div>
+        {/* Full-width detail panel below the strip */}
+        {expandedScore && (
+          <HeroExpandedPanel score={expandedScore} />
+        )}
       </div>
     );
   }
 
   return (
     <div className="space-y-10">
-      {/* Composition picker — always visible */}
-      <div className="bg-white/[0.05] border border-white/[0.09] rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="font-semibold text-sm text-white">Enemy Composition</p>
-              {isCustomMode && (
-                <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-400 font-medium">
-                  {selectedUnitIds.size + selectedHeroIds.size} selected
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-white/35 mt-0.5">
-              Select what the enemy is running for tailored counter-picks
-            </p>
-          </div>
+
+      {/* ── Enemy composition picker ──────────────────────────────── */}
+      <div className="space-y-5">
+
+        {/* Top bar: instruction + clear all */}
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-white/35 leading-relaxed">
+            Select what the enemy is running for tailored counter-picks
+          </p>
           {hasSelection && (
-            <button onClick={() => { setSelectedUnitIds(new Set()); setSelectedHeroIds(new Set()); }} className="rounded-xl border border-white/[0.08] px-3 py-1.5 text-xs text-white/40 hover:text-white/70 hover:border-white/[0.18] transition-colors flex-shrink-0 ml-4">
-              Clear all
+            <button
+              onClick={clearAll}
+              className="font-mono text-[10px] tracking-[0.1em] text-white/25 hover:text-white/55 transition-colors flex-shrink-0 ml-4"
+            >
+              Clear all · {selectedUnitIds.size + selectedHeroIds.size}
             </button>
           )}
         </div>
 
-        <div className="border-t border-white/[0.06] px-4 sm:px-5 pb-5 pt-4 space-y-5">
-          <div>
-            <div className="flex items-center justify-between mb-2.5">
-              <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Enemy Heroes</p>
-              {selectedHeroIds.size > 0 && <button onClick={() => setSelectedHeroIds(new Set())} className="text-[11px] text-white/25 hover:text-white/60">clear</button>}
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {allEnemyHeroes.map((h) => <ToggleChip key={h.id} label={h.name} sub={`${h.primaryStat} · ${h.range}`} iconSrc={getHeroIcon(h.id)} active={selectedHeroIds.has(h.id)} onClick={() => toggleHero(h.id)} />)}
-            </div>
+        {/* Heroes */}
+        <PickerSection
+          label="Enemy Heroes"
+          showClear={selectedHeroIds.size > 0}
+          onClear={() => setSelectedHeroIds(new Set())}
+        >
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {allEnemyHeroes.map((h) => (
+              <HeroTooltip key={h.id} hero={h} className="w-full min-w-0">
+                <ToggleChip
+                  label={h.name}
+                  sub={`${h.primaryStat} · ${h.range}`}
+                  iconSrc={getHeroIcon(h.id)}
+                  active={selectedHeroIds.has(h.id)}
+                  onClick={() => toggleHero(h.id)}
+                />
+              </HeroTooltip>
+            ))}
           </div>
-          {[1, 2, 3].map((tier) => (
-            <div key={tier}>
-              <div className="flex items-center justify-between mb-2.5">
-                <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Tier {tier} Units</p>
-                {unitsByTier[tier].some((u) => selectedUnitIds.has(u.id)) && (
-                  <button onClick={() => setSelectedUnitIds((p) => { const n = new Set(p); unitsByTier[tier].forEach((u) => n.delete(u.id)); return n; })} className="text-[11px] text-white/25 hover:text-white/60">clear tier {tier}</button>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {unitsByTier[tier].map((u) => <ToggleChip key={u.id} label={u.name} sub={`${ATTACK_TYPE_LABELS[u.attackType]} / ${ARMOR_TYPE_LABELS[u.armorType]}`} iconSrc={getUnitIcon(u.id)} active={selectedUnitIds.has(u.id)} onClick={() => toggleUnit(u.id)} />)}
-              </div>
+        </PickerSection>
+
+        {/* Units by tier */}
+        {[1, 2, 3].map((tier) => (
+          <PickerSection
+            key={tier}
+            label={`Tier ${tier} Units`}
+            showClear={unitsByTier[tier].some((u) => selectedUnitIds.has(u.id))}
+            onClear={() => setSelectedUnitIds((p) => {
+              const n = new Set(p);
+              unitsByTier[tier].forEach((u) => n.delete(u.id));
+              return n;
+            })}
+          >
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {unitsByTier[tier].map((u) => (
+                <UnitTooltip key={u.id} unit={u} className="w-full min-w-0">
+                  <ToggleChip
+                    label={u.name}
+                    sub={`${ATTACK_TYPE_LABELS[u.attackType]} / ${ARMOR_TYPE_LABELS[u.armorType]}`}
+                    iconSrc={getUnitIcon(u.id)}
+                    active={selectedUnitIds.has(u.id)}
+                    onClick={() => toggleUnit(u.id)}
+                  />
+                </UnitTooltip>
+              ))}
             </div>
-          ))}
-          {!hasSelection && (
-            <p className="text-[11px] text-white/25 pt-1">Select units/heroes above for precise counter-picks</p>
-          )}
-        </div>
+          </PickerSection>
+        ))}
+
+        {!hasSelection && (
+          <p className="font-mono text-[10px] text-white/20 tracking-[0.05em]">
+            No units selected — showing default rankings vs all {RACE_LABELS[enemyRace]} units
+          </p>
+        )}
       </div>
 
-      {/* Active composition strip */}
+      {/* ── Composition insights (warnings/tips) ─────────────────── */}
       {isCustomMode && (
-        <div className="bg-white/[0.05] border border-white/[0.09] rounded-2xl px-4 py-3">
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-white/40 font-medium mr-1">Analyzing vs:</span>
-            {allEnemyHeroes.filter((h) => selectedHeroIds.has(h.id)).map((h) => (
-              <span key={h.id} className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 pl-1 pr-2.5 py-0.5 text-amber-300">
-                <span className="relative h-4 w-4 overflow-hidden rounded-full flex-shrink-0"><Image src={getHeroIcon(h.id)} alt={h.name} fill className="object-cover" unoptimized /></span>
-                {h.name}
-              </span>
-            ))}
-            {allEnemyUnits.filter((u) => selectedUnitIds.has(u.id)).map((u) => (
-              <span key={u.id} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] pl-1 pr-2.5 py-0.5 text-white/60">
-                <span className="relative h-4 w-4 overflow-hidden rounded-full flex-shrink-0"><Image src={getUnitIcon(u.id)} alt={u.name} fill className="object-cover" unoptimized /></span>
-                {u.name}
-              </span>
-            ))}
-          </div>
-          <CompositionInsights
-            selectedUnits={allEnemyUnits.filter((u) => selectedUnitIds.has(u.id))}
-            selectedHeroes={allEnemyHeroes.filter((h) => selectedHeroIds.has(h.id))}
-          />
-        </div>
+        <CompositionInsights
+          selectedUnits={allEnemyUnits.filter((u) => selectedUnitIds.has(u.id))}
+          selectedHeroes={allEnemyHeroes.filter((h) => selectedHeroIds.has(h.id))}
+        />
       )}
 
-      {/* Units */}
+      {/* ── Unit recommendations ──────────────────────────────────── */}
       <section>
-        <div className="flex items-center gap-3 mb-5">
-          <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Unit Recommendations</p>
-          {isCustomMode && <span className="rounded-full bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 text-[10px] text-amber-400">Custom</span>}
+        <div className="flex items-center gap-4 mb-5">
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-white/35 flex-shrink-0">
+            Unit Recommendations
+          </span>
+          <div className="h-px flex-1 bg-white/[0.07]" />
+          {isCustomMode && (
+            <span className="font-mono text-[10px] text-amber-400/60 flex-shrink-0">Custom</span>
+          )}
           <button
             onClick={() => setShowMatrix(true)}
-            className="ml-auto rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/40 hover:text-white/70 hover:border-white/[0.18] transition-colors flex items-center gap-1.5 flex-shrink-0"
+            className="flex-shrink-0 border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[10px] font-mono text-white/35 hover:text-white/65 hover:border-white/[0.15] transition-colors"
           >
-            <span>⬡</span>
-            <span className="hidden sm:inline">Matchup </span>Matrix
+            Matrix
           </button>
         </div>
+
         {!isCustomMode && (
-          <p className="mb-4 text-xs text-white/35">
+          <p className="text-xs text-white/30 mb-4 leading-relaxed">
             Ranked vs all {RACE_LABELS[enemyRace]} units. Select specific units above for precise results.
           </p>
         )}
+
         {recommended.length > 0 && (
           <div className="mb-5">
-            <p className="text-xs font-medium text-emerald-400/80 mb-3">Recommended ({recommended.length})</p>
-            {renderUnitGrid(recommended)}
+            <div className="flex items-center gap-3 mb-3">
+              <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-emerald-400/70">Recommended</span>
+              <div className="h-px flex-1 bg-white/[0.06]" />
+              <span className="font-mono text-[10px] text-white/20">{recommended.length}</span>
+            </div>
+            {renderUnitList(recommended, 1)}
           </div>
         )}
+
         {situational.length > 0 && (
-          <details className="group mb-2.5">
-            <summary className="cursor-pointer text-xs font-medium text-white/40 mb-3 list-none flex items-center gap-2 hover:text-white/70 transition-colors">
-              <span className="group-open:rotate-90 transition-transform text-white/20">▶</span>
-              Situational ({situational.length})
+          <details className="group mb-3">
+            <summary className="cursor-pointer list-none mb-3">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-white/35 group-open:text-white/55 transition-colors">Situational</span>
+                <div className="h-px flex-1 bg-white/[0.06]" />
+                <span className="font-mono text-[10px] text-white/20">{situational.length}</span>
+                <span className="font-mono text-[10px] text-white/15 group-open:rotate-180 transition-transform inline-block">▼</span>
+              </div>
             </summary>
-            {renderUnitGrid(situational, "mt-3")}
+            <div className="mt-3">{renderUnitList(situational, recommended.length + 1)}</div>
           </details>
         )}
+
         {avoid.length > 0 && (
           <details className="group">
-            <summary className="cursor-pointer text-xs font-medium text-red-400/60 mb-3 list-none flex items-center gap-2 hover:text-red-400/80 transition-colors">
-              <span className="group-open:rotate-90 transition-transform text-white/20">▶</span>
-              Avoid ({avoid.length})
+            <summary className="cursor-pointer list-none mb-3">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-red-400/50 group-open:text-red-400/70 transition-colors">Avoid</span>
+                <div className="h-px flex-1 bg-white/[0.06]" />
+                <span className="font-mono text-[10px] text-white/20">{avoid.length}</span>
+                <span className="font-mono text-[10px] text-white/15 group-open:rotate-180 transition-transform inline-block">▼</span>
+              </div>
             </summary>
-            {renderUnitGrid(avoid, "mt-3")}
+            <div className="mt-3">{renderUnitList(avoid, recommended.length + situational.length + 1)}</div>
           </details>
         )}
       </section>
 
-      {/* Heroes */}
+      {/* ── Hero recommendations ──────────────────────────────────── */}
       <section>
-        <div className="flex items-center gap-3 mb-5">
-          <p className="text-[11px] font-medium tracking-widest uppercase text-white/40">Hero Recommendations</p>
-          {isCustomMode && <span className="rounded-full bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 text-[10px] text-amber-400">Custom</span>}
+        <div className="flex items-center gap-4 mb-5">
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-white/35 flex-shrink-0">
+            Hero Recommendations
+          </span>
+          <div className="h-px flex-1 bg-white/[0.07]" />
+          {isCustomMode && (
+            <span className="font-mono text-[10px] text-amber-400/60 flex-shrink-0">Custom</span>
+          )}
         </div>
         {renderHeroGrid(activeHeroScores)}
       </section>
@@ -322,11 +519,7 @@ export function CompositionAnalyzer({ myRace, enemyRace, defaultResult }: Compos
       {/* Matchup Matrix modal */}
       {showMatrix && (
         <MatchupMatrixModal
-          enemyUnits={
-            hasSelection
-              ? allEnemyUnits.filter((u) => selectedUnitIds.has(u.id))
-              : allEnemyUnits
-          }
+          enemyUnits={hasSelection ? allEnemyUnits.filter((u) => selectedUnitIds.has(u.id)) : allEnemyUnits}
           myUnitScores={activeUnitScores}
           isCustomMode={isCustomMode}
           onClose={() => setShowMatrix(false)}
@@ -362,10 +555,20 @@ function CompositionInsights({ selectedUnits, selectedHeroes }: { selectedUnits:
   if (hasMortar)       insights.push({ text: "Mortar splash punishes clumped armies. Mortars are fragile in melee — rush them with Grunts.", type: "warning" });
   if (insights.length === 0) return null;
   return (
-    <div className="mt-3 space-y-1.5">
+    <div className="space-y-2 mt-1">
       {insights.map((insight, i) => (
-        <div key={i} className={cn("flex items-start gap-2 rounded-xl px-3 py-2 text-xs", insight.type === "warning" ? "bg-red-500/10 text-red-300/80" : "bg-emerald-500/10 text-emerald-300/80")}>
-          <span className="flex-shrink-0 mt-0.5">{insight.type === "warning" ? "⚠" : "→"}</span>
+        <div
+          key={i}
+          className={cn(
+            "flex items-start gap-2.5 border-l-2 pl-3 py-1 text-[11px] leading-relaxed",
+            insight.type === "warning"
+              ? "border-red-500/40 text-red-300/65"
+              : "border-emerald-500/40 text-emerald-300/65"
+          )}
+        >
+          <span className="flex-shrink-0 font-mono text-[10px] mt-0.5">
+            {insight.type === "warning" ? "!" : "+"}
+          </span>
           {insight.text}
         </div>
       ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   DAMAGE_MATRIX,
   ATTACK_TYPE_LABELS,
@@ -52,10 +53,10 @@ export function DamageMatrix() {
                   onMouseEnter={() => setHoveredArmor(armor)}
                   onMouseLeave={() => setHoveredArmor(null)}
                   title={ARMOR_TYPE_DESCRIPTIONS[armor]}
-                  className={`
-                    px-2 sm:px-3 py-2.5 text-[11px] font-medium text-center border-b border-white/[0.06] cursor-default transition-colors whitespace-nowrap
-                    ${hoveredArmor === armor ? "bg-amber-500/10 text-amber-400" : "bg-white/[0.04] text-white/40"}
-                  `}
+                  className={cn(
+                    "px-2 sm:px-3 py-2.5 text-[11px] font-medium text-center border-b border-white/[0.06] cursor-default whitespace-nowrap",
+                    hoveredArmor === armor ? "bg-amber-500/10 text-amber-400" : "bg-white/[0.04] text-white/40"
+                  )}
                 >
                   {ARMOR_TYPE_LABELS[armor]}
                 </th>
@@ -69,10 +70,10 @@ export function DamageMatrix() {
                   onMouseEnter={() => setHoveredAttack(attack)}
                   onMouseLeave={() => setHoveredAttack(null)}
                   title={ATTACK_TYPE_DESCRIPTIONS[attack]}
-                  className={`
-                    px-3 py-2 text-[11px] font-medium border-r border-white/[0.06] cursor-default transition-colors whitespace-nowrap
-                    ${hoveredAttack === attack ? "bg-amber-500/10 text-amber-400" : "text-white/40"}
-                  `}
+                  className={cn(
+                    "px-3 py-2 text-[11px] font-medium border-r border-white/[0.06] cursor-default whitespace-nowrap",
+                    hoveredAttack === attack ? "bg-amber-500/10 text-amber-400" : "text-white/40"
+                  )}
                 >
                   {ATTACK_TYPE_LABELS[attack]}
                 </td>
@@ -85,11 +86,11 @@ export function DamageMatrix() {
                       onMouseEnter={(e) => setTooltip({ attackType: attack, armorType: armor, multiplier: m, x: e.clientX, y: e.clientY })}
                       onMouseMove={(e) => setTooltip((p) => p ? { ...p, x: e.clientX, y: e.clientY } : null)}
                       onMouseLeave={() => setTooltip(null)}
-                      className={`
-                        px-2 sm:px-3 py-2 text-center text-[11px] font-semibold cursor-default transition-all duration-100
-                        ${cellColor(m)}
-                        ${active ? "brightness-125" : ""}
-                      `}
+                      className={cn(
+                        "px-2 sm:px-3 py-2 text-center text-[11px] font-semibold cursor-default",
+                        cellColor(m),
+                        active ? "opacity-100" : "opacity-75"
+                      )}
                     >
                       {Math.round(m * 100)}%
                     </td>
