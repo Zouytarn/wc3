@@ -38,6 +38,7 @@ export interface MatchupResult {
 }
 
 // Compute how well a unit attacks the enemy army (offensive effectiveness)
+// A unit scores 0 against targets it physically cannot hit (air/ground mismatch).
 function computeOffensiveScore(unit: Unit, enemyUnits: Unit[]): {
   score: number;
   details: { enemyUnit: Unit; multiplier: number; label: string }[];
@@ -45,31 +46,31 @@ function computeOffensiveScore(unit: Unit, enemyUnits: Unit[]): {
   if (enemyUnits.length === 0) return { score: 1.0, details: [] };
 
   const details = enemyUnits.map((enemy) => {
+    const canHit = enemy.isFlying ? unit.canAttackAir : unit.canAttackGround;
+    if (!canHit) {
+      return { enemyUnit: enemy, multiplier: 0, label: "Can't reach" };
+    }
     const multiplier = DAMAGE_MATRIX[unit.attackType][enemy.armorType];
-    return {
-      enemyUnit: enemy,
-      multiplier,
-      label: getEffectivenessLabel(multiplier),
-    };
+    return { enemyUnit: enemy, multiplier, label: getEffectivenessLabel(multiplier) };
   });
 
   const score = details.reduce((sum, d) => sum + d.multiplier, 0) / details.length;
   return { score, details };
 }
 
-// Compute how well a unit resists enemy attacks (defensive score)
-// A unit is more resistant if enemies do less damage to it
+// Compute how well a unit resists enemy attacks (defensive score).
+// Enemies that cannot hit this unit (air/ground mismatch) are excluded.
 function computeDefensiveScore(unit: Unit, enemyUnits: Unit[]): number {
-  if (enemyUnits.length === 0) return 1.0;
+  const attackers = enemyUnits.filter((enemy) =>
+    unit.isFlying ? enemy.canAttackAir : enemy.canAttackGround
+  );
+  if (attackers.length === 0) return 1.5; // nobody can hit us — good defensive position
 
-  // Average damage enemy units deal to this unit — lower is better for defense
   const avgEnemyDamage =
-    enemyUnits.reduce((sum, enemy) => {
-      const multiplier = DAMAGE_MATRIX[enemy.attackType][unit.armorType];
-      return sum + multiplier;
-    }, 0) / enemyUnits.length;
+    attackers.reduce((sum, enemy) => {
+      return sum + DAMAGE_MATRIX[enemy.attackType][unit.armorType];
+    }, 0) / attackers.length;
 
-  // Invert so a higher score = more defensive
   return 1 / avgEnemyDamage;
 }
 

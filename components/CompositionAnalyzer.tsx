@@ -18,33 +18,50 @@ import { getRecommendationColor, getRecommendationLabel } from "@/lib/matchup-en
 import { cn } from "@/lib/utils";
 
 function scoreUnitVsComposition(unit: Unit, enemyUnits: Unit[], enemyHeroes: Hero[]): UnitMatchupScore {
-  const allTargets = [
-    ...enemyUnits,
-    ...enemyHeroes.map((h) => ({ id: h.id, name: h.name, attackType: h.attackType, armorType: h.armorType } as Unit)),
-  ];
+  // Heroes are treated as ground, unarmored for targeting purposes
+  const heroAsUnit = (h: Hero): Unit =>
+    ({ id: h.id, name: h.name, attackType: h.attackType, armorType: h.armorType, isFlying: false, canAttackAir: false, canAttackGround: true } as unknown as Unit);
+
+  const allTargets = [...enemyUnits, ...enemyHeroes.map(heroAsUnit)];
+
   if (allTargets.length === 0) {
     return { unit, offensiveScore: 1.0, defensiveScore: 1.0, overallScore: 1.0, effectivenessVsEnemyUnits: [], explanation: "No composition selected.", recommendation: "situational" };
   }
-  const details = allTargets.map((t) => ({
-    enemyUnit: t,
-    multiplier: DAMAGE_MATRIX[unit.attackType][t.armorType],
-    label: getEffectivenessLabel(DAMAGE_MATRIX[unit.attackType][t.armorType]),
-  }));
+
+  // Offensive: score 0 if we can't physically reach the target
+  const details = allTargets.map((t) => {
+    const canHit = t.isFlying ? unit.canAttackAir : unit.canAttackGround;
+    if (!canHit) return { enemyUnit: t, multiplier: 0, label: "Can't reach" };
+    const multiplier = DAMAGE_MATRIX[unit.attackType][t.armorType];
+    return { enemyUnit: t, multiplier, label: getEffectivenessLabel(multiplier) };
+  });
+
   const offensiveScore = details.reduce((s, d) => s + d.multiplier, 0) / details.length;
-  const allAttackers = [...enemyUnits, ...enemyHeroes.map((h) => ({ attackType: h.attackType } as Unit))];
-  const avgIncoming = allAttackers.length > 0
-    ? allAttackers.reduce((s, e) => s + DAMAGE_MATRIX[e.attackType][unit.armorType], 0) / allAttackers.length
-    : 1.0;
+
+  // Defensive: only count attackers that can actually hit us
+  const attackers = [...enemyUnits, ...enemyHeroes.map(heroAsUnit)].filter((e) =>
+    unit.isFlying ? e.canAttackAir : e.canAttackGround
+  );
+  const avgIncoming = attackers.length > 0
+    ? attackers.reduce((s, e) => s + DAMAGE_MATRIX[e.attackType][unit.armorType], 0) / attackers.length
+    : 1.5; // nobody can hit us — strong defensive position
   const defensiveScore = 1 / avgIncoming;
+
   const overallScore = offensiveScore * 0.65 + defensiveScore * 0.35;
+
+  const cantReach = details.filter((d) => d.label === "Can't reach").map((d) => d.enemyUnit.name);
   const strongVs = details.filter((d) => d.multiplier >= 1.25).map((d) => `${d.enemyUnit.name} (${Math.round(d.multiplier * 100)}%)`);
-  const weakVs = details.filter((d) => d.multiplier < 0.75).map((d) => `${d.enemyUnit.name} (${Math.round(d.multiplier * 100)}%)`);
+  const weakVs = details.filter((d) => d.multiplier > 0 && d.multiplier < 0.75).map((d) => `${d.enemyUnit.name} (${Math.round(d.multiplier * 100)}%)`);
+
   let explanation = `${unit.name} uses ${unit.attackType} attack. `;
+  if (cantReach.length > 0) explanation += `Cannot reach: ${cantReach.join(", ")}. `;
   if (strongVs.length > 0) explanation += `Bonus damage vs: ${strongVs.join(", ")}. `;
   if (weakVs.length > 0) explanation += `Reduced vs: ${weakVs.join(", ")}. `;
-  if (!strongVs.length && !weakVs.length) explanation += "Consistent damage across selected composition.";
+  if (!cantReach.length && !strongVs.length && !weakVs.length) explanation += "Consistent damage across selected composition.";
+
   const recommendation: UnitMatchupScore["recommendation"] =
     overallScore >= 1.3 ? "highly_recommended" : overallScore >= 1.05 ? "recommended" : overallScore >= 0.85 ? "situational" : "avoid";
+
   return { unit, offensiveScore, defensiveScore, overallScore, effectivenessVsEnemyUnits: details, explanation, recommendation };
 }
 
@@ -118,12 +135,18 @@ function UnitRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm text-white">{unit.name}</span>
+            {unit.isFlying && (
+              <span className="font-mono text-[8px] tracking-[0.1em] uppercase px-1 py-px border border-sky-500/40 text-sky-400/70">AIR</span>
+            )}
             <span className={cn("font-mono text-[10px] tracking-[0.08em] uppercase", getRecommendationColor(recommendation))}>
               {getRecommendationLabel(recommendation)}
             </span>
           </div>
-          <div className="font-mono text-[10px] text-white/25 mt-0.5">
-            T{unit.tier} · {unit.goldCost}g · {ATTACK_TYPE_LABELS[unit.attackType]} / {ARMOR_TYPE_LABELS[unit.armorType]}
+          <div className="font-mono text-[10px] text-white/25 mt-0.5 flex items-center gap-1.5">
+            <span>T{unit.tier} · {unit.goldCost}g · {ATTACK_TYPE_LABELS[unit.attackType]} / {ARMOR_TYPE_LABELS[unit.armorType]}</span>
+            {unit.canAttackAir && (
+              <span className="px-1 py-px border border-emerald-500/30 text-emerald-400/60 text-[8px] font-mono uppercase tracking-[0.08em]">vs Air</span>
+            )}
           </div>
         </div>
 
@@ -163,31 +186,61 @@ function UnitRow({
               <CompactUnitDetail unit={unit} />
             </div>
 
-            {/* Right: effectiveness list — compact, no scroll needed for short lists */}
-            <div className="px-4 py-4">
-              <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-white/25 mb-2.5">
-                vs Enemy
-              </p>
-              <div className="space-y-px">
-                {[...effectivenessVsEnemyUnits]
-                  .sort((a, b) => b.multiplier - a.multiplier)
-                  .map(({ enemyUnit, multiplier }) => (
-                    <div key={enemyUnit.id} className="flex items-center justify-between gap-2 py-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <div className="relative h-4 w-4 overflow-hidden flex-shrink-0">
-                          <Image src={getUnitIcon(enemyUnit.id)} alt={enemyUnit.name} fill className="object-cover" unoptimized />
+            {/* Right: effectiveness + synergies */}
+            <div className="px-4 py-4 space-y-4">
+              {/* vs Enemy effectiveness */}
+              <div>
+                <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-white/25 mb-2.5">vs Enemy</p>
+                <div className="space-y-px">
+                  {[...effectivenessVsEnemyUnits]
+                    .sort((a, b) => b.multiplier - a.multiplier)
+                    .map(({ enemyUnit, multiplier, label }) => (
+                      <div key={enemyUnit.id} className="flex items-center justify-between gap-2 py-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="relative h-4 w-4 overflow-hidden flex-shrink-0">
+                            <Image src={getUnitIcon(enemyUnit.id)} alt={enemyUnit.name} fill className="object-cover" unoptimized />
+                          </div>
+                          <span className="text-white/35 truncate text-[10px]">{enemyUnit.name}</span>
                         </div>
-                        <span className="text-white/35 truncate text-[10px]">{enemyUnit.name}</span>
+                        {label === "Can't reach" ? (
+                          <span className="font-mono text-[10px] text-white/20 italic flex-shrink-0">—</span>
+                        ) : (
+                          <span className={cn(
+                            "font-mono font-semibold flex-shrink-0 text-[10px] tabular-nums",
+                            multiplier >= 1.5 ? "text-emerald-400" : multiplier >= 1.0 ? "text-amber-400" : "text-red-400"
+                          )}>
+                            {Math.round(multiplier * 100)}%
+                          </span>
+                        )}
                       </div>
-                      <span className={cn(
-                        "font-mono font-semibold flex-shrink-0 text-[10px] tabular-nums",
-                        multiplier >= 1.5 ? "text-emerald-400" : multiplier >= 1.0 ? "text-amber-400" : "text-red-400"
-                      )}>
-                        {Math.round(multiplier * 100)}%
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
+
+              {/* Synergies */}
+              {unit.synergies.length > 0 && (
+                <div>
+                  <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-white/25 mb-2.5">Pairs with</p>
+                  <div className="space-y-2">
+                    {unit.synergies.slice(0, 3).map((s) => {
+                      const ally = [...UNITS_BY_RACE.human, ...UNITS_BY_RACE.orc, ...UNITS_BY_RACE.nightelf, ...UNITS_BY_RACE.undead].find((u) => u.id === s.unitId);
+                      return (
+                        <div key={s.unitId} className="flex items-start gap-2">
+                          {ally && (
+                            <div className="relative h-5 w-5 overflow-hidden flex-shrink-0 border border-white/[0.10] mt-px">
+                              <Image src={getUnitIcon(s.unitId)} alt={ally.name} fill className="object-cover" unoptimized />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <span className="text-[10px] text-white/50 font-medium">{ally?.name ?? s.unitId}</span>
+                            <p className="text-[9px] text-white/25 leading-snug mt-px">{s.reason}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

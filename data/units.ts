@@ -50,6 +50,11 @@ export interface UnitUpgrade {
   levels: UnitUpgradeLevel[];
 }
 
+export interface UnitSynergy {
+  unitId: string;
+  reason: string;
+}
+
 export interface Unit {
   id: string;
   name: string;
@@ -91,6 +96,14 @@ export interface Unit {
   lore?: string;
   abilities: UnitAbility[];
   upgrades: UnitUpgrade[];
+  /** Derived from moveType — true if unit is airborne */
+  isFlying: boolean;
+  /** Can this unit's basic attack hit flying units */
+  canAttackAir: boolean;
+  /** Can this unit's basic attack hit ground units */
+  canAttackGround: boolean;
+  /** Units that work well alongside this unit */
+  synergies: UnitSynergy[];
   /** Strategy overlay — not from Liquipedia */
   special: string[];
   counters: string[];
@@ -101,6 +114,9 @@ export interface Unit {
 type GameplayOverlay = {
   role: UnitRole;
   tier: UnitTier;
+  canAttackAir: boolean;
+  canAttackGround: boolean;
+  synergies: UnitSynergy[];
   counters: string[];
   weakTo: string[];
 };
@@ -127,6 +143,10 @@ function buildUnit(raw: LiquipediaUnit): Unit {
     armorType: raw.armorType as ArmorType,
     role: overlay?.role ?? "frontline",
     tier: overlay?.tier ?? 1,
+    isFlying: raw.moveType === "fly",
+    canAttackAir: overlay?.canAttackAir ?? false,
+    canAttackGround: overlay?.canAttackGround ?? true,
+    synergies: overlay?.synergies ?? [],
     counters: overlay?.counters ?? [],
     weakTo: overlay?.weakTo ?? [],
     damage: avgDmg % 1 === 0 ? String(avgDmg) : avgDmg.toFixed(1),

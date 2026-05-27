@@ -6,6 +6,7 @@ import { RACE_LABELS, type Race } from "@/data/units";
 import BuildOrderSection from "@/components/BuildOrderSection";
 import { DamageMatrix } from "@/components/DamageMatrix";
 import { CompositionAnalyzer } from "@/components/CompositionAnalyzer";
+import { getMatchupGuides } from "@/data/matchup-guides";
 
 const VALID_RACES: Race[] = ["human", "orc", "nightelf", "undead"];
 
@@ -64,6 +65,7 @@ export default async function MatchupPage({
   const { myRace, enemyRace } = parsed;
   const result = computeMatchup(myRace, enemyRace);
   const buildOrders = getBuildOrders(myRace, enemyRace);
+  const guides = getMatchupGuides(myRace, enemyRace);
 
   return (
     <div className="min-h-screen">
@@ -180,9 +182,43 @@ export default async function MatchupPage({
 
         <Hr />
 
-        {/* 04 — Other matchups */}
+        {/* 04 — Matchup guides */}
+        {guides.length > 0 && (
+          <>
+            <Hr />
+            <section>
+              <SectionHead index="04" label="Matchup Guides" />
+              <div className="flex flex-wrap gap-2.5">
+                {guides.map((g) => (
+                  <Link
+                    key={g.url}
+                    href={g.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex flex-col gap-1 border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-amber-500/30 transition-colors px-4 py-3 max-w-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[8px] tracking-[0.15em] uppercase text-amber-500/50 group-hover:text-amber-400/70 transition-colors flex-shrink-0">
+                        {g.source}
+                      </span>
+                      <span className="text-white/10 font-thin">·</span>
+                      <span className="text-[11px] font-medium text-white/60 group-hover:text-white/90 transition-colors leading-tight">
+                        {g.title}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-white/25 leading-snug">{g.summary}</p>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+
+        <Hr />
+
+        {/* 05 — Other matchups */}
         <section>
-          <SectionHead index="04" label="Other Matchups" />
+          <SectionHead index={guides.length > 0 ? "05" : "04"} label="Other Matchups" />
           <div className="grid grid-cols-3 gap-3">
             {(["human", "orc", "nightelf", "undead"] as Race[])
               .filter((e) => e !== enemyRace)
