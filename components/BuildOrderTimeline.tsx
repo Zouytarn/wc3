@@ -73,6 +73,13 @@ export default function BuildOrderTimeline({ buildOrders }: BuildOrderTimelinePr
           </span>
         </div>
 
+        {/* Attribution */}
+        {active.attribution && (
+          <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-amber-500/50">
+            {active.attribution}
+          </p>
+        )}
+
         {/* Strategy text */}
         <p className="text-xs text-white/50 leading-relaxed">{active.strategy}</p>
 
